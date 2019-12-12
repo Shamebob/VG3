@@ -87,6 +87,22 @@ public void keyPressed() {
         case '1':
           controller.player.useItem(1);
           break;
+
+        case '2':
+          controller.player.useItem(2);
+          break;
+
+        case '3':
+          controller.player.useItem(3);
+          break;
+        
+        case '4':
+          controller.player.useItem(4);
+          break;
+
+        case '5':
+          controller.player.useItem(5);
+          break;
     }
 }
 public class Animator {
@@ -247,6 +263,10 @@ public class Controller {
         this.gold = new Gold();
     }
 
+    public void addInnGold(int amount) {
+        this.gold.addGold(amount);
+    }
+
     public void start() {
         this.gameInPlay = true;
         this.player = spawner.spawnPlayer();
@@ -315,27 +335,35 @@ public class Controller {
 }
 public abstract class Customer extends Character {
     int popularity;
+    float satisfaction;
     Gold money;
     PVector direction;
     int moveCounter;
+    boolean leaving;
 
     public Customer(float x, float y, Shape shape, int popularity, int goldAmount) {
         super(x, y, shape);
         this.popularity = popularity;
+        this.satisfaction = 0;
         this.money = new Gold();
         this.money.addGold(goldAmount);
         this.direction = this.findDirection();
         this.moveCounter = 0;
+        this.leaving = false;
     }
 
     public void draw() {
+        if(this.leaving) {
+            this.move(this.direction);
+            return;
+        }
+
         if(this.moveCounter % 30 == 0) {
             this.move(this.direction);
 
             if(this.moveCounter % 120 == 0) 
                 this.direction = this.findDirection();
         }
-            
         
         this.moveCounter += 1;
     }
@@ -347,7 +375,15 @@ public abstract class Customer extends Character {
     public void useItem(EnvironmentItem item) {
         if(item instanceof Beer) {
             System.out.println("Drinking Beer!");
+            this.money.buy(item);
+            //TODO: If the item is correct as to what they want, + lots. Diminishing returns based on likes and dislikes.
+            //TODO: Could have it so that new patrons declare what they like?
         }
+
+        if(this.money.getAmount() < 10) {
+            this.leaving = true;
+            this.direction = controller.inn.getDoorPos().sub(this.getPos()).normalize();
+        } 
     }
 }
 public abstract class EnvironmentItem extends GameObject {
@@ -432,10 +468,19 @@ public class Gold {
         return this.amount;
     }
 
+    public void buy(EnvironmentItem item) {
+        if(item instanceof Beer) {
+            this.amount -= 10;
+            controller.addInnGold(10);
+        }
+    }
+
 }
 public class Inn {
     private float startX, startY, endX, endY;
     private ArrayList<Wall> walls = new ArrayList<Wall>();
+    PVector doorPos;
+
     public Inn() {
         this.startX = displayWidth/4;
         this.endX = this.startX * 3;
@@ -454,6 +499,7 @@ public class Inn {
         for (int i = 0; i < wallCount; i++) {
             if(i == wallCount/2) {
                 this.walls.add(new Wall(curX, startY, wallWidth, wallHeight, WallType.DOOR));
+                this.doorPos = new PVector(curX, startY);
             } else {
                 this.walls.add(new Wall(curX, startY, wallWidth, wallHeight, WallType.BOTTOM));
             }
@@ -496,6 +542,10 @@ public class Inn {
 
     public float getEndY() {
         return this.endY;
+    }
+
+    public PVector getDoorPos() {
+        return this.doorPos.copy();
     }
 
     public boolean wallCollision(PVector position) {
@@ -549,6 +599,20 @@ public class Player extends Staff {
         image(HERO_IDLE, this.getX(), this.getY(), HEIGHT, WIDTH);
         super.draw();
     }
+}
+public class Popularity {
+    int totalPopularity;
+
+    public Popularity() {
+        this.totalPopularity = 0;
+    }
+
+    public void addPopularity(int customerSatisfaction, int customerPopularity) {
+        //TODO: Should this be affected by the number of customers the inn has seen?
+        this.totalPopularity += (customerSatisfaction * customerPopularity);
+    }
+
+
 }
 
 /**

@@ -20,6 +20,10 @@ public class Controller {
         this.gold = new Gold();
     }
 
+    public void addInnGold(int amount) {
+        this.gold.addGold(amount);
+    }
+
     public void start() {
         this.gameInPlay = true;
         this.player = spawner.spawnPlayer();

@@ -13,4 +13,11 @@ public class Gold {
         return this.amount;
     }
 
+    public void buy(EnvironmentItem item) {
+        if(item instanceof Beer) {
+            this.amount -= 10;
+            controller.addInnGold(10);
+        }
+    }
+
 }

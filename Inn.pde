@@ -1,6 +1,8 @@
 public class Inn {
     private float startX, startY, endX, endY;
     private ArrayList<Wall> walls = new ArrayList<Wall>();
+    PVector doorPos;
+
     public Inn() {
         this.startX = displayWidth/4;
         this.endX = this.startX * 3;
@@ -19,6 +21,7 @@ public class Inn {
         for (int i = 0; i < wallCount; i++) {
             if(i == wallCount/2) {
                 this.walls.add(new Wall(curX, startY, wallWidth, wallHeight, WallType.DOOR));
+                this.doorPos = new PVector(curX, startY);
             } else {
                 this.walls.add(new Wall(curX, startY, wallWidth, wallHeight, WallType.BOTTOM));
             }
@@ -61,6 +64,10 @@ public class Inn {
 
     public float getEndY() {
         return this.endY;
+    }
+
+    public PVector getDoorPos() {
+        return this.doorPos.copy();
     }
 
     public boolean wallCollision(PVector position) {
