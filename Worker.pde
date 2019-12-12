@@ -5,6 +5,7 @@ public class Worker extends Staff {
 
     public void draw() {
         fill(0, 255, 0);
+        rect(this.getX(), this.getY(), HEIGHT,WIDTH);
         super.draw();
     }
 

@@ -1,4 +1,5 @@
 import java.awt.geom.Rectangle2D;
+import java.awt.geom.Ellipse2D;
 import java.awt.Shape;
 
 public abstract class GameObject {
@@ -26,6 +27,10 @@ public abstract class GameObject {
     PVector getPos() {
         // Make a copy so that no changes can be made to the character's values externally.
         return this.pos.copy();
+    }
+
+    void setPos(PVector pos) {
+        this.pos = pos;
     }
 
     float getX() {

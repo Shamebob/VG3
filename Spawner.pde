@@ -15,4 +15,10 @@ public class Spawner {
     public Player spawnPlayer() {
         return new Player(displayHeight/2, displayWidth/2);
     }
+
+    public Customer spawnCustomer() {
+        int goldAmount = 50;
+        int popularity = 50;
+        return new Knight(displayWidth/2 - 100, displayHeight/2, popularity, goldAmount);
+    }
 }

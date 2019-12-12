@@ -22,7 +22,7 @@ public class CollisionDetector {
     * @param charA, the first shape to intersect.
     * @param charB, the second shape to intersect.
     */
-    boolean checkCollision(Shape shapeA, Shape shapeB) {
+    public boolean checkCollision(Shape shapeA, Shape shapeB) {
         return shapeA.getBounds2D().intersects(shapeB.getBounds2D());
     }
 

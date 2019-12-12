@@ -6,6 +6,10 @@ public class Controller {
     boolean gameInPlay;
     Player player;
     Time time;
+    Inn inn;
+    Gold gold;
+    ArrayList<EnvironmentItem> items = new ArrayList<EnvironmentItem>();
+    ArrayList<Customer> customers = new ArrayList<Customer>();
 
     CollisionDetector collisionDetector = new CollisionDetector();
     Cleaner cleaner = new Cleaner();
@@ -13,16 +17,31 @@ public class Controller {
     Animator animator = new Animator();
     
     public Controller () {
+        this.gold = new Gold();
     }
 
     public void start() {
         this.gameInPlay = true;
         this.player = spawner.spawnPlayer();
+        this.customers.add(spawner.spawnCustomer());
+        this.items.add(new Keg(displayWidth/2, displayHeight/2));
         this.time = new Time();
+        this.inn = new Inn();
     }
 
-    public void movePlayer(float x, float y) {
-        this.player.move(new PVector(x,y));
+    public void movePlayer(float x, float y, Facing direction) {
+        PVector change = new PVector(x,y);
+        if(!checkPlayerCollisions(change)) {
+            this.player.move(change);
+            this.player.setFacing(direction);
+        }
+    }
+
+    private boolean checkPlayerCollisions(PVector change) {
+        PVector nextPos = this.player.getPos().add(change);
+        if(inn.wallCollision(nextPos.copy()))
+            return true;
+        return false;
     }
 
     public void drawGame() {
@@ -33,7 +52,25 @@ public class Controller {
             textSize(50);
             text("Game Over", displayWidth/2 - 100, displayHeight/2 - 25);
         }
+    }
 
+    public EnvironmentItem findItem(Shape shape) {
+
+        for(EnvironmentItem item : items) {
+            if(this.collisionDetector.checkCollision(item.getShape(), shape)) {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    public void useItem(EnvironmentItem item, Shape shape) {
+        for(Customer customer : this.customers) {
+            if(this.collisionDetector.checkCollision(customer.getShape(), shape)) {
+                customer.useItem(item);
+            }
+        }
     }
 
     /**

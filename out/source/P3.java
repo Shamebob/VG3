@@ -9,6 +9,7 @@ import java.awt.Shape;
 import java.awt.Shape; 
 import java.awt.geom.Area; 
 import java.awt.geom.Rectangle2D; 
+import java.awt.geom.Ellipse2D; 
 import java.awt.Shape; 
 import java.awt.geom.*; 
 
@@ -29,6 +30,7 @@ public class P3 extends PApplet {
 
 // Keep controller as global to control the gamestate.
 Controller controller;
+PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, KEG, BEER, HERO_IDLE, WINDOW;
 
 /**
 * Setup the game
@@ -36,6 +38,14 @@ Controller controller;
 public void setup() {
   
   noCursor();
+  OUTSIDE_WALL = loadImage("outside_wall.png");
+  INSIDE_WALL = loadImage("inside_wall.png");
+  DOOR = loadImage("door.png");
+  KEG = loadImage("keg.png");
+  HERO_IDLE = loadImage("hero_idle.png");
+  WINDOW = loadImage("window.png");
+  BEER = loadImage("beer.png");
+
   controller = new Controller();
   controller.start();
 }
@@ -55,29 +65,112 @@ public void keyPressed() {
 
     switch(key) {
         case 'w':
-        controller.movePlayer(0, -moveSize);
-        break;
+          controller.movePlayer(0, -moveSize, Facing.UP);
+          break;
 
         case 'a':
-        controller.movePlayer(-moveSize, 0);
-        break;
+          controller.movePlayer(-moveSize, 0, Facing.LEFT);
+          break;
 
         case 's':
-        controller.movePlayer(0, moveSize);
-        break;
+          controller.movePlayer(0, moveSize, Facing.DOWN);
+          break;
 
         case 'd':
-        controller.movePlayer(moveSize, 0);
-        break;
+          controller.movePlayer(moveSize, 0, Facing.RIGHT);
+          break;
+
+        case 'e':
+          controller.player.pickupItem();
+          break;
+
+        case '1':
+          controller.player.useItem(1);
+          break;
     }
 }
 public class Animator {
+    float actionBarStartX, actionBarHeight, infoStartX, infoWidth;
+
     public Animator() {
+        this.actionBarStartX = displayWidth/4;
+        this.actionBarHeight = displayHeight/10;
+        this.infoWidth = displayWidth/15;
+        this.infoStartX = displayWidth - this.infoWidth;
     }
 
     public void drawActiveGame(Controller controller) {
-        controller.time.draw();
+        this.drawTimedBackground(controller.time);
+        this.drawHUD(controller);
+        controller.inn.draw();
         controller.player.draw();
+
+        for(EnvironmentItem item : controller.items) {
+            item.draw();
+        }
+
+        for(Customer customer: controller.customers) {
+            customer.draw();
+        }
+    }
+
+    private void drawTimedBackground(Time time) {
+        if(time.hour < 20 && time.hour >= 8) {
+            background(255, 255, 255);
+        } else {
+            background(0, 0, 0);
+        }
+    }
+
+    private void drawHUD(Controller controller) {
+        fill(101,67,33);
+        rect(0, displayHeight - this.actionBarHeight, displayWidth, this.actionBarHeight);
+        this.drawActionBar(controller);
+        this.drawInfo(controller);
+    }
+
+    private void drawActionBar(Controller controller) {
+        float actionBoxWidth = (displayWidth/2)/5;
+        float currentPoint = this.actionBarStartX;
+        for (int i = 0; i < 5; i++) {
+            fill(139, 93, 46);
+            rect(currentPoint, displayHeight - this.actionBarHeight, actionBoxWidth, this.actionBarHeight);
+            fill(0, 0, 0);
+            text(i + 1, currentPoint + 5, displayHeight - this.actionBarHeight + 20);
+            currentPoint += actionBoxWidth;
+        }
+
+        PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/3));
+        PVector factorChange = new PVector(actionBoxWidth, 0);
+        for(EnvironmentItem item : controller.player.inventory) {
+            item.setPos(currentPos);
+            item.draw();
+            currentPos = currentPos.add(factorChange);
+        }
+    }
+    
+    private void drawInfo(Controller controller) {
+        controller.time.draw();
+        fill(139, 93, 46);
+        rect(this.infoStartX, displayHeight - this.actionBarHeight, this.infoWidth, this.actionBarHeight);
+
+        textSize(16);
+        fill(0,0,0);
+        if (controller.time.minute < 10) {
+            text("Day " + controller.time.day + "\n" + controller.time.hour + ":0" + controller.time.minute + "\nGold: " + controller.gold.getAmount(), this.infoStartX + 5, displayHeight - this.actionBarHeight + 20);
+        } else {
+            text("Day " + controller.time.day + "\n" + controller.time.hour + ":" + controller.time.minute + "\nGold: " + controller.gold.getAmount(), this.infoStartX + 5, displayHeight - this.actionBarHeight + 20);
+        }
+    }
+}
+public class Beer extends EnvironmentItem {
+    public Beer(float x, float y) {
+        super(x, y, ((Shape) new Rectangle2D.Float(x, y, 25, 25)), 1);
+    }
+
+    public void draw() {
+        image(BEER, this.getX(), this.getY(), 25, 25);
+
     }
 }
 public abstract class Character extends GameObject {
@@ -131,6 +224,7 @@ public class CollisionDetector {
     }
 
 }
+
 /**
 * The controller is the central logic for the game and stores its state. The Controller is responsible
 /* for resolving and updating the game state, drawing the game as well as monitoring if the game is over.
@@ -139,6 +233,10 @@ public class Controller {
     boolean gameInPlay;
     Player player;
     Time time;
+    Inn inn;
+    Gold gold;
+    ArrayList<EnvironmentItem> items = new ArrayList<EnvironmentItem>();
+    ArrayList<Customer> customers = new ArrayList<Customer>();
 
     CollisionDetector collisionDetector = new CollisionDetector();
     Cleaner cleaner = new Cleaner();
@@ -146,16 +244,31 @@ public class Controller {
     Animator animator = new Animator();
     
     public Controller () {
+        this.gold = new Gold();
     }
 
     public void start() {
         this.gameInPlay = true;
         this.player = spawner.spawnPlayer();
+        this.customers.add(spawner.spawnCustomer());
+        this.items.add(new Keg(displayWidth/2, displayHeight/2));
         this.time = new Time();
+        this.inn = new Inn();
     }
 
-    public void movePlayer(float x, float y) {
-        this.player.move(new PVector(x,y));
+    public void movePlayer(float x, float y, Facing direction) {
+        PVector change = new PVector(x,y);
+        if(!checkPlayerCollisions(change)) {
+            this.player.move(change);
+            this.player.setFacing(direction);
+        }
+    }
+
+    private boolean checkPlayerCollisions(PVector change) {
+        PVector nextPos = this.player.getPos().add(change);
+        if(inn.wallCollision(nextPos.copy()))
+            return true;
+        return false;
     }
 
     public void drawGame() {
@@ -166,7 +279,25 @@ public class Controller {
             textSize(50);
             text("Game Over", displayWidth/2 - 100, displayHeight/2 - 25);
         }
+    }
 
+    public EnvironmentItem findItem(Shape shape) {
+
+        for(EnvironmentItem item : items) {
+            if(this.collisionDetector.checkCollision(item.getShape(), shape)) {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    public void useItem(EnvironmentItem item, Shape shape) {
+        for(Customer customer : this.customers) {
+            if(this.collisionDetector.checkCollision(customer.getShape(), shape)) {
+                customer.useItem(item);
+            }
+        }
     }
 
     /**
@@ -182,11 +313,58 @@ public class Controller {
     }
 
 }
-public abstract class EnvironmentItem extends GameObject {
-    public EnvironmentItem(float x, float y, Shape shape) {
+public abstract class Customer extends Character {
+    int popularity;
+    Gold money;
+    PVector direction;
+    int moveCounter;
+
+    public Customer(float x, float y, Shape shape, int popularity, int goldAmount) {
         super(x, y, shape);
+        this.popularity = popularity;
+        this.money = new Gold();
+        this.money.addGold(goldAmount);
+        this.direction = this.findDirection();
+        this.moveCounter = 0;
+    }
+
+    public void draw() {
+        if(this.moveCounter % 30 == 0) {
+            this.move(this.direction);
+
+            if(this.moveCounter % 120 == 0) 
+                this.direction = this.findDirection();
+        }
+            
+        
+        this.moveCounter += 1;
+    }
+
+    private PVector findDirection() {
+        return new PVector(random(-2, 2), random(-2, 2));
+    }
+
+    public void useItem(EnvironmentItem item) {
+        if(item instanceof Beer) {
+            System.out.println("Drinking Beer!");
+        }
     }
 }
+public abstract class EnvironmentItem extends GameObject {
+    int uses;
+    public EnvironmentItem(float x, float y, Shape shape, int uses) {
+        super(x, y, shape);
+        this.uses = uses;
+    }
+
+    public void use() {
+        this.uses -=1;
+        if(this.uses == 0) {
+            this.destroy();
+        }
+    }
+}
+
 
 
 
@@ -217,6 +395,10 @@ public abstract class GameObject {
         return this.pos.copy();
     }
 
+    public void setPos(PVector pos) {
+        this.pos = pos;
+    }
+
     public float getX() {
         return this.pos.x;
     }
@@ -235,6 +417,118 @@ public abstract class GameObject {
 
     public abstract void draw();
 }
+public class Gold {
+    private int amount;
+
+    public Gold() {
+        this.amount = 0;
+    }
+
+    public void addGold(int quantity) {
+        this.amount += quantity;
+    }
+
+    public int getAmount() {
+        return this.amount;
+    }
+
+}
+public class Inn {
+    private float startX, startY, endX, endY;
+    private ArrayList<Wall> walls = new ArrayList<Wall>();
+    public Inn() {
+        this.startX = displayWidth/4;
+        this.endX = this.startX * 3;
+        this.startY = displayHeight/4 * 3;
+        this.endY = displayHeight/4;
+        this.buildWalls();
+    }
+
+    public void buildWalls() {
+        float wallWidth = displayWidth/100 * 3;
+        int wallCount = PApplet.parseInt((this.endX - this.startX)/wallWidth);
+        float wallHeight = displayWidth/100 * 4;
+        float curX = startX;
+        float curY = endY;
+
+        for (int i = 0; i < wallCount; i++) {
+            if(i == wallCount/2) {
+                this.walls.add(new Wall(curX, startY, wallWidth, wallHeight, WallType.DOOR));
+            } else {
+                this.walls.add(new Wall(curX, startY, wallWidth, wallHeight, WallType.BOTTOM));
+            }
+            
+            if(i % 5 == 1) {
+                this.walls.add(new Wall(curX, endY, wallWidth, wallHeight, WallType.WINDOW));
+            } else {
+                this.walls.add(new Wall(curX, endY, wallWidth, wallHeight, WallType.TOP));
+            }
+            curX += wallWidth;
+        }
+
+        wallCount = PApplet.parseInt((this.startY - this.endY)/wallHeight) + 1;
+        println("Wall count: " + wallCount);
+        for(int i = 0; i < wallCount; i++) {
+            this.walls.add(new Wall(this.startX, curY, wallWidth/5, wallHeight, WallType.SIDE));
+            this.walls.add(new Wall(curX, curY, wallWidth/5, wallHeight, WallType.SIDE));
+            curY += wallHeight;
+        }
+        System.out.println("Number of walls: " + this.walls.size());
+    }
+
+    public void draw() {
+        for(Wall wall : this.walls) {
+            wall.draw();
+        }
+    }
+
+    public float getStartX() {
+        return this.startX;
+    }
+
+    public float getStartY() {
+        return this.startY;
+    }
+
+    public float getEndX() {
+        return this.endX;
+    }
+
+    public float getEndY() {
+        return this.endY;
+    }
+
+    public boolean wallCollision(PVector position) {
+      for(Wall wall : this.walls) {
+        if(wall.getShape().contains(position.x, position.y) && wall.wallType != WallType.DOOR) {
+          System.out.println("True");
+          return true;
+        }
+      }
+      return false;
+    }
+}
+public class Keg extends EnvironmentItem {
+
+    public Keg(float x, float y) {
+        super(x, y, ((Shape) new Ellipse2D.Float(x, y, 15, 15)), 10);
+    }
+
+    public void draw() {
+        image(KEG, this.getX(), this.getY(), 30, 30);
+    }
+}
+public class Knight extends Customer {
+    public Knight(float x, float y, int popularity, int goldAmount) {
+        super(x, y, ((Shape) new Rectangle2D.Float(x, y, 20, 20)), popularity, goldAmount);
+    }
+
+    public void draw() {
+        this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), 20, 20));
+        ellipse(this.getX(), this.getY(), 20, 20);
+        super.draw();
+    }
+}
 public abstract class NPC extends Character{
 
     public NPC (float x, float y, Shape shape) {
@@ -242,18 +536,19 @@ public abstract class NPC extends Character{
     }
 
 }
-
 public class Player extends Staff {
-
     public Player (float x, float y) {
         super(x, y);
     }
 
-    public void draw() {
-        fill(255, 0, 0);
-        super.draw();
+    public void setFacing(Facing direction) {
+        this.currentFacing = direction;
     }
 
+    public void draw() {
+        image(HERO_IDLE, this.getX(), this.getY(), HEIGHT, WIDTH);
+        super.draw();
+    }
 }
 
 /**
@@ -272,30 +567,77 @@ public class Spawner {
     public Player spawnPlayer() {
         return new Player(displayHeight/2, displayWidth/2);
     }
+
+    public Customer spawnCustomer() {
+        int goldAmount = 50;
+        int popularity = 50;
+        return new Knight(displayWidth/2 - 100, displayHeight/2, popularity, goldAmount);
+    }
 }
-final float HEIGHT = 20;
-final float WIDTH = 20;
+final float HEIGHT = 30;
+final float WIDTH = 30;
+
+enum Facing{
+    UP, LEFT, DOWN, RIGHT;
+}
 
 public abstract class Staff extends Character {
+    Facing currentFacing;
+    ArrayList<EnvironmentItem> inventory = new ArrayList<EnvironmentItem>();
+
     public Staff (float x, float y) {
-        super(x, y, ((Shape) new Rectangle2D.Float(x, y, HEIGHT, WIDTH)));
+        super(x, y, ((Shape) new Rectangle2D.Float(x, y, WIDTH, HEIGHT)));
+        this.currentFacing = Facing.DOWN;
     }
 
     public void draw() {
-        rect(this.getX(), this.getY(), HEIGHT,WIDTH);
-        this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), HEIGHT, WIDTH));
-    }
-}
-public class Worker extends Staff {
-    public Worker (float x, float y) {
-        super(x, y);
+        this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), WIDTH, HEIGHT));
     }
 
-    public void draw() {
-        fill(0, 255, 0);
-        super.draw();
+    private Shape findZone() {
+        float x = this.getX();
+        float y = this.getY();
+        Shape shapeArea;
+
+        switch (currentFacing) {
+            case UP:
+                y -= HEIGHT;
+                break;
+
+            case LEFT:
+                x -= WIDTH;
+                break;
+
+            case DOWN:
+                y += HEIGHT;
+                break;
+
+            case RIGHT:
+                x += WIDTH;
+                break;
+        }
+
+        return new Rectangle2D.Float(x, y, WIDTH, HEIGHT);
     }
 
+    public void pickupItem() {
+        EnvironmentItem item = controller.findItem(this.findZone());
+        if(item == null || this.inventory.size() >= 5)
+            return;
+        
+        if(item instanceof Keg) {
+            inventory.add(new Beer(0,0));
+            item.use();
+        }
+    }
+
+    public void useItem(int index) {
+        if(index <= this.inventory.size()) {
+            EnvironmentItem item = this.inventory.get(index - 1);
+            controller.useItem(item, this.findZone());
+            this.inventory.remove(index - 1);
+        }
+    }
 }
 public class Time {
     int day, hour, minute, second;
@@ -307,6 +649,7 @@ public class Time {
         this.day = 1;
         this.second = 0;
         this.dayOver = false;
+        
     }
 
     public void addMinute() {
@@ -336,29 +679,54 @@ public class Time {
     }
 
     public void draw() {
-        this.second += 1;
+        this.second += 5;
         if(this.second % 60 == 0) {
             this.addMinute();
             this.second = 0;
         }
+    }
+}
+enum WallType {
+    BOTTOM, SIDE, TOP, DOOR, WINDOW;
+}
 
-        this.drawBackground();
-        textSize(16);
-        fill(0,255,0);
-        if (this.minute < 10) {
-            text("Day " + this.day + "\n" + this.hour + ":0" + this.minute, 0, 20);
-        } else {
-            text("Day " + this.day + "\n" + this.hour + ":" + this.minute, 0, 20);
-        }
+public class Wall extends GameObject{
+    float width, height;
+    WallType wallType;
+
+    public Wall(float x, float y, float width, float height, WallType wallType) {
+        super(x, y, ((Shape) new Rectangle2D.Float(x, y, width, height)));
+        this.width = width;
+        this.height = height;
+        this.wallType = wallType;
     }
 
-    private void drawBackground() {
-        if(this.hour < 20 && this.hour >= 8) {
-            background(255, 255, 255);
+    public void draw() {
+        if(this.wallType == WallType.BOTTOM) {
+            image(OUTSIDE_WALL, this.getX(), this.getY(), this.width, this.height);
+        } else if(this.wallType == WallType.TOP) {
+            image(INSIDE_WALL, this.getX(), this.getY(), this.width, this.height);
+        } else if(this.wallType == WallType.DOOR) {
+            image(DOOR, this.getX(), this.getY(), this.width, this.height);
+        } else if(this.wallType == WallType.WINDOW) {
+            image(WINDOW, this.getX(), this.getY(), this.width, this.height);
         } else {
-            background(0, 0, 0);
+            fill(128, 128, 128);
+            rect(this.getX(), this.getY(), this.width, this.height);
         }
     }
+}
+public class Worker extends Staff {
+    public Worker (float x, float y) {
+        super(x, y);
+    }
+
+    public void draw() {
+        fill(0, 255, 0);
+        rect(this.getX(), this.getY(), HEIGHT,WIDTH);
+        super.draw();
+    }
+
 }
   public void settings() {  fullScreen(); }
   static public void main(String[] passedArgs) {
