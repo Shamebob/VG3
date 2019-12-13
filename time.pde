@@ -1,6 +1,7 @@
 public class Time {
     int day, hour, minute, second;
     boolean dayOver;
+    int spawnTimer, spawnCounter;
 
     public Time() {
         this.hour = 8;
@@ -8,15 +9,28 @@ public class Time {
         this.day = 1;
         this.second = 0;
         this.dayOver = false;
-        
+        this.spawnTimer = 120;
+        this.spawnCounter = 0;
     }
 
     public void addMinute() {
         this.minute += 1;
+        this.spawnCounter += 1;
+
         if(this.minute % 60 == 0) {
             this.addHour();
             this.minute = 0;
         }
+
+        if(this.spawnCounter % spawnTimer == 0) {
+            //TODO: Turn back on
+            // controller.newCustomer();
+            this.spawnCounter = 0;
+        }
+    }
+
+    public void setSpawnTimer(int spawnTimer) {
+        this.spawnTimer = spawnTimer;
     }
 
     private void addHour() {

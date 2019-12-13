@@ -1,5 +1,6 @@
 public class Animator {
     float actionBarStartX, actionBarHeight, infoStartX, infoWidth;
+    PImage[] crests = new PImage[]{KNIGHT_CREST};
 
     public Animator() {
         this.actionBarStartX = displayWidth/4;
@@ -21,6 +22,10 @@ public class Animator {
         for(Customer customer: controller.customers) {
             customer.draw();
         }
+
+        for(Feeling feeling: controller.feelings) {
+            feeling.draw();
+        }
     }
 
     private void drawTimedBackground(Time time) {
@@ -36,6 +41,26 @@ public class Animator {
         rect(0, displayHeight - this.actionBarHeight, displayWidth, this.actionBarHeight);
         this.drawActionBar(controller);
         this.drawInfo(controller);
+        this.drawPopularity(controller);
+    }
+
+    private void drawPopularity(Controller controller) {
+        float popularityBoxWidth = (displayWidth/4)/4;
+        float crestWidth = (popularityBoxWidth/2);
+        float crestStartY = (displayHeight - this.actionBarHeight) + (this.actionBarHeight/4);
+        float crestHeight = (this.actionBarHeight/2);
+        float currentPoint = 0;
+        int[] popularityLevels = controller.popularity.getPopularityLevels();
+
+        for(int i = 0; i < this.crests.length; i++) {
+            fill(139, 93, 46);
+            rect(currentPoint, displayHeight - this.actionBarHeight, popularityBoxWidth, this.actionBarHeight);
+            image(this.crests[i], currentPoint + (popularityBoxWidth/4), crestStartY, crestWidth, crestHeight);
+
+            fill(0, 0, 0);
+            text(popularityLevels[i], currentPoint + (popularityBoxWidth/2) - 5, displayHeight - 3);
+            currentPoint += popularityBoxWidth;
+        }
     }
 
     private void drawActionBar(Controller controller) {

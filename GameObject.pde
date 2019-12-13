@@ -10,6 +10,7 @@ public abstract class GameObject {
     public GameObject (float x, float y, Shape shape) {
         this.pos = new PVector(x,y);
         this.shape = shape;
+        this.active = true;
     }
 
     Shape getShape() {

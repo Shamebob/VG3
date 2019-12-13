@@ -1,14 +1,27 @@
 public class Popularity {
-    int totalPopularity;
+    float knightPopularity;
+    int knightCounter;
+    int knightPopularityLevel;
 
     public Popularity() {
-        this.totalPopularity = 0;
+        this.knightPopularity = 0;
+        this.knightPopularityLevel = 1;
+        this.knightCounter = 0;
     }
 
-    public void addPopularity(int customerSatisfaction, int customerPopularity) {
-        //TODO: Should this be affected by the number of customers the inn has seen?
-        this.totalPopularity += (customerSatisfaction * customerPopularity);
+    public void addKnightPopularity(float popularity) {
+        this.knightCounter += 1;
+        this.knightPopularity = (this.knightPopularity + popularity)/knightCounter;
+        System.out.println("Popularity: "+ this.knightPopularity);
+        
+        if(this.knightPopularity >= (this.knightPopularityLevel * 10)) {
+            this.knightPopularityLevel += 1;
+            this.knightPopularity = 0;
+            this.knightCounter = 0;
+        }
     }
 
-
+    public int[] getPopularityLevels() {
+        return new int[] {this.knightPopularityLevel};
+    }
 }

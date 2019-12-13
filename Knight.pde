@@ -4,8 +4,26 @@ public class Knight extends Customer {
     }
 
     public void draw() {
-        this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), 20, 20));
-        ellipse(this.getX(), this.getY(), 20, 20);
-        super.draw();
+
+        if(this.entering)
+            super.checkEntered();
+
+        if(this.moveCounter % 120 == 0 && !this.leaving && !this.entering) 
+            this.direction = super.findDirection();
+
+        if(this.moveCounter % 15 == 0)
+            this.move(this.direction);
+
+        this.moveCounter += 1;
+
+        this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), 30, 40));
+        image(KNIGHT_IDLE, this.getX(), this.getY(), 30, 40);
+        //TODO: Make sure they don't leave until they're done.
+    }
+
+    @Override
+    protected void leave() {
+        controller.popularity.addKnightPopularity(this.evaluatePerformance());
+        super.leave();
     }
 }

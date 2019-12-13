@@ -4,7 +4,8 @@ import java.awt.Shape;
 
 // Keep controller as global to control the gamestate.
 Controller controller;
-PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, KEG, BEER, HERO_IDLE, WINDOW;
+PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, KEG, BEER, HERO_IDLE, WINDOW, HAPPY, SAD;
+PImage KNIGHT_IDLE, KNIGHT_CREST;
 
 /**
 * Setup the game
@@ -19,6 +20,10 @@ void setup() {
   HERO_IDLE = loadImage("hero_idle.png");
   WINDOW = loadImage("window.png");
   BEER = loadImage("beer.png");
+  HAPPY = loadImage("happy.png");
+  SAD = loadImage("sad.png");
+  KNIGHT_IDLE = loadImage("knight_idle.png");
+  KNIGHT_CREST = loadImage("knight_crest.png");
 
   controller = new Controller();
   controller.start();
