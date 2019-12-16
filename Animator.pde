@@ -38,6 +38,23 @@ public class Animator {
         }
     }
 
+
+    public void endDay(Controller controller) {
+        this.drawTimedBackground(controller.time);
+        textSize(16);
+        this.drawHUD(controller);
+        controller.inn.draw();
+
+        fill(255, 255, 255);
+        textSize(56);
+        text("Day " + controller.time.day + "\nGold: " + controller.gold.getAmount(), (displayWidth/2)-100, (displayHeight/2) - 100);
+
+
+        for(EnvironmentItem item : controller.items) {
+            item.draw();
+        }
+    }
+
     private void drawTimedBackground(Time time) {
         if(time.hour < 20 && time.hour >= 8) {
             background(255, 255, 255);

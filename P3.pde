@@ -85,5 +85,8 @@ void keyPressed() {
         case '5':
           controller.player.useItem(5);
           break;
+        
+        case ' ':
+          controller.startDay();
     }
 }

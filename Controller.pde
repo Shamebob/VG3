@@ -3,7 +3,7 @@
 /* for resolving and updating the game state, drawing the game as well as monitoring if the game is over.
 */
 public class Controller {
-    boolean gameInPlay;
+    boolean gameInPlay, endDay;
     Player player;
     Time time;
     Inn inn;
@@ -26,7 +26,15 @@ public class Controller {
         this.gold.addGold(amount);
     }
 
+    public void startDay() {
+        if(this.endDay) {
+            this.time.newDay();
+            this.endDay = false;
+        }
+    }
+
     public void start() {
+        this.endDay = false;
         this.time = new Time();
         this.inn = new Inn();
         this.spawner.setDoorPos(this.inn.getDoorPos());
@@ -54,7 +62,9 @@ public class Controller {
     }
 
     public void drawGame() {
-        if(this.gameInPlay) {
+        if(this.endDay) {
+            animator.endDay(this);
+        } else if(this.gameInPlay) {
             animator.drawActiveGame(this);
             this.cleaner.cleanGame();
             this.collisionDetector.checkCollisions();

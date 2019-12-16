@@ -4,8 +4,8 @@ public class Time {
     int spawnTimer, spawnCounter;
 
     public Time() {
-        this.hour = 8;
-        this.minute = 0;
+        this.hour = 23;
+        this.minute = 58;
         this.day = 1;
         this.second = 0;
         this.dayOver = false;
@@ -24,7 +24,7 @@ public class Time {
 
         if(this.spawnCounter % spawnTimer == 0) {
             //TODO: Turn back on
-            // controller.newCustomer();
+            controller.newCustomer();
             this.spawnCounter = 0;
         }
     }
@@ -40,8 +40,9 @@ public class Time {
             this.hour = 0;
         }
 
-        if(this.hour == 2) {
+        if(this.hour == 0) {
             this.dayOver = true;
+            controller.endDay = true;
         }
     }
 
@@ -49,11 +50,12 @@ public class Time {
         this.day += 1;
         this.hour = 8;
         this.minute = 0;
+        this.dayOver = false;
     }
 
     public void draw() {
         this.second += 5;
-        if(this.second % 60 == 0) {
+        if(this.second % 60 == 0 && !this.dayOver) {
             this.addMinute();
             this.second = 0;
         }

@@ -112,6 +112,9 @@ public void keyPressed() {
         case '5':
           controller.player.useItem(5);
           break;
+        
+        case ' ':
+          controller.startDay();
     }
 }
 public class Animator {
@@ -151,6 +154,23 @@ public class Animator {
 
         for(Feeling feeling: controller.feelings) {
             feeling.draw();
+        }
+    }
+
+
+    public void endDay(Controller controller) {
+        this.drawTimedBackground(controller.time);
+        textSize(16);
+        this.drawHUD(controller);
+        controller.inn.draw();
+
+        fill(255, 255, 255);
+        textSize(56);
+        text("Day " + controller.time.day + "\nGold: " + controller.gold.getAmount(), (displayWidth/2)-100, (displayHeight/2) - 100);
+
+
+        for(EnvironmentItem item : controller.items) {
+            item.draw();
         }
     }
 
@@ -374,7 +394,7 @@ public class CollisionDetector {
 /* for resolving and updating the game state, drawing the game as well as monitoring if the game is over.
 */
 public class Controller {
-    boolean gameInPlay;
+    boolean gameInPlay, endDay;
     Player player;
     Time time;
     Inn inn;
@@ -397,7 +417,15 @@ public class Controller {
         this.gold.addGold(amount);
     }
 
+    public void startDay() {
+        if(this.endDay) {
+            this.time.newDay();
+            this.endDay = false;
+        }
+    }
+
     public void start() {
+        this.endDay = false;
         this.time = new Time();
         this.inn = new Inn();
         this.spawner.setDoorPos(this.inn.getDoorPos());
@@ -425,7 +453,9 @@ public class Controller {
     }
 
     public void drawGame() {
-        if(this.gameInPlay) {
+        if(this.endDay) {
+            animator.endDay(this);
+        } else if(this.gameInPlay) {
             animator.drawActiveGame(this);
             this.cleaner.cleanGame();
             this.collisionDetector.checkCollisions();
@@ -1019,8 +1049,8 @@ public class Time {
     int spawnTimer, spawnCounter;
 
     public Time() {
-        this.hour = 8;
-        this.minute = 0;
+        this.hour = 23;
+        this.minute = 58;
         this.day = 1;
         this.second = 0;
         this.dayOver = false;
@@ -1039,7 +1069,7 @@ public class Time {
 
         if(this.spawnCounter % spawnTimer == 0) {
             //TODO: Turn back on
-            // controller.newCustomer();
+            controller.newCustomer();
             this.spawnCounter = 0;
         }
     }
@@ -1055,8 +1085,9 @@ public class Time {
             this.hour = 0;
         }
 
-        if(this.hour == 2) {
+        if(this.hour == 0) {
             this.dayOver = true;
+            controller.endDay = true;
         }
     }
 
@@ -1064,11 +1095,12 @@ public class Time {
         this.day += 1;
         this.hour = 8;
         this.minute = 0;
+        this.dayOver = false;
     }
 
     public void draw() {
         this.second += 5;
-        if(this.second % 60 == 0) {
+        if(this.second % 60 == 0 && !this.dayOver) {
             this.addMinute();
             this.second = 0;
         }
