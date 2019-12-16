@@ -34,6 +34,7 @@ public class Controller {
         this.player = spawner.spawnPlayer();
         this.customers.add(spawner.spawnCustomer());
         this.items.add(new Keg(displayWidth/2, displayHeight/2));
+        this.items.add(new Chicken(displayWidth/2 + 100, displayHeight/2 + 100));
         
     }
 

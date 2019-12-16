@@ -12,6 +12,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.geom.Ellipse2D; 
 import java.awt.Shape; 
 import java.awt.geom.*; 
+import java.util.Arrays; 
 
 import java.util.HashMap; 
 import java.util.ArrayList; 
@@ -30,8 +31,9 @@ public class P3 extends PApplet {
 
 // Keep controller as global to control the gamestate.
 Controller controller;
-PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, KEG, BEER, HERO_IDLE, WINDOW, HAPPY, SAD;
+PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, HERO_IDLE, WINDOW, HAPPY, SAD;
 PImage KNIGHT_IDLE, KNIGHT_CREST;
+PImage KEG, BEER, CHICKEN, CHICKEN_LEG;
 
 /**
 * Setup the game
@@ -50,6 +52,8 @@ public void setup() {
   SAD = loadImage("sad.png");
   KNIGHT_IDLE = loadImage("knight_idle.png");
   KNIGHT_CREST = loadImage("knight_crest.png");
+  CHICKEN = loadImage("whole_chicken.png");
+  CHICKEN_LEG = loadImage("chicken_leg.png");
 
   controller = new Controller();
   controller.start();
@@ -111,7 +115,8 @@ public void keyPressed() {
     }
 }
 public class Animator {
-    float actionBarStartX, actionBarHeight, infoStartX, infoWidth;
+    float actionBarStartX, actionBarHeight, infoStartX, infoWidth, customerEmotionsWidth, customerEmotionsStartX;
+    ItemType[] newCustomerLikes, newCustomerDislikes;
     PImage[] crests = new PImage[]{KNIGHT_CREST};
 
     public Animator() {
@@ -119,6 +124,15 @@ public class Animator {
         this.actionBarHeight = displayHeight/10;
         this.infoWidth = displayWidth/15;
         this.infoStartX = displayWidth - this.infoWidth;
+        this.customerEmotionsWidth = displayWidth/4 - this.infoWidth;
+        this.customerEmotionsStartX = displayWidth - this.infoWidth - this.customerEmotionsWidth;
+        this.newCustomerLikes = new ItemType[0];
+        this.newCustomerDislikes = new ItemType[0];
+    }
+
+    public void newCustomer(ItemType[] likes, ItemType[] dislikes) {
+        this.newCustomerLikes = likes;
+        this.newCustomerDislikes = dislikes;
     }
 
     public void drawActiveGame(Controller controller) {
@@ -153,6 +167,7 @@ public class Animator {
         rect(0, displayHeight - this.actionBarHeight, displayWidth, this.actionBarHeight);
         this.drawActionBar(controller);
         this.drawInfo(controller);
+        this.drawCustomerEmotions(controller);
         this.drawPopularity(controller);
     }
 
@@ -208,6 +223,43 @@ public class Animator {
             text("Day " + controller.time.day + "\n" + controller.time.hour + ":" + controller.time.minute + "\nGold: " + controller.gold.getAmount(), this.infoStartX + 5, displayHeight - this.actionBarHeight + 20);
         }
     }
+
+    private void drawCustomerEmotions(Controller controller) {
+        fill(255, 255, 255);
+        rect(this.customerEmotionsStartX, displayHeight - this.actionBarHeight, this.customerEmotionsWidth, this.actionBarHeight);
+        image(HAPPY, this.customerEmotionsStartX + (this.customerEmotionsWidth/4) - 10, displayHeight - (actionBarHeight - (this.actionBarHeight/10)), 20, 20);
+        image(SAD, this.customerEmotionsStartX + (3 * (this.customerEmotionsWidth/4)) - 10, displayHeight - (actionBarHeight - (this.actionBarHeight/10)), 20, 20);
+
+        float imageSpace = this.customerEmotionsWidth/6;
+        float imageY = displayHeight - (this.actionBarHeight/2);
+        float imageHeight = this.actionBarHeight/4;
+        float currentPoint = this.customerEmotionsStartX + (imageSpace/4);
+        float imageWidth = imageSpace/2;
+
+        for(ItemType item : this.newCustomerLikes) {
+            drawItemType(item, currentPoint, imageY, imageWidth, imageHeight);
+        }
+
+        currentPoint = this.customerEmotionsStartX + (this.customerEmotionsWidth/2) + (imageSpace/4);
+
+        for(ItemType item : this.newCustomerDislikes) {
+            drawItemType(item, currentPoint, imageY, imageWidth, imageHeight);
+        }
+
+    }
+
+    public void drawItemType(ItemType item, float x, float y, float width, float height) {
+        PImage itemImage = null;
+
+        if(item == ItemType.BEER) {
+            itemImage = BEER;
+        } else if(item == ItemType.CHICKENLEG) {
+            itemImage = CHICKEN_LEG;
+        }
+
+        if(itemImage != null)
+            image(itemImage, x, y, width, height);
+    }
 }
 public class Beer extends EnvironmentItem {
     public Beer(float x, float y) {
@@ -233,6 +285,26 @@ public abstract class Character extends GameObject {
         this.shape = shape;
     }
 }
+public class Chicken extends EnvironmentItem {
+
+    public Chicken(float x, float y) {
+        super(x, y, ((Shape) new Ellipse2D.Float(x, y, 15, 15)), 10);
+    }
+
+    public void draw() {
+        image(CHICKEN, this.getX(), this.getY(), 30, 30);
+    }
+}
+public class ChickenLeg extends EnvironmentItem {
+    public ChickenLeg(float x, float y) {
+        super(x, y, ((Shape) new Rectangle2D.Float(x, y, 25, 25)), 1);
+    }
+
+    public void draw() {
+        image(CHICKEN_LEG, this.getX(), this.getY(), 25, 25);
+
+    }
+}
 public class Cleaner {
     Cleaner() {
     }
@@ -248,7 +320,6 @@ public class Cleaner {
         while(iter.hasNext()) {
             curObj = (EnvironmentItem) iter.next();
             if(!curObj.isActive()) {
-                System.out.println("Removing");
                 iter.remove();
             }
         }
@@ -260,7 +331,6 @@ public class Cleaner {
         while(iter.hasNext()) {
             curObj = (Feeling) iter.next();
             if(!curObj.isActive()) {
-                System.out.println("Removing");
                 iter.remove();
             }
         }
@@ -335,6 +405,7 @@ public class Controller {
         this.player = spawner.spawnPlayer();
         this.customers.add(spawner.spawnCustomer());
         this.items.add(new Keg(displayWidth/2, displayHeight/2));
+        this.items.add(new Chicken(displayWidth/2 + 100, displayHeight/2 + 100));
         
     }
 
@@ -393,7 +464,7 @@ public class Controller {
     }
 }
 enum ItemType {
-    BEER;
+    BEER, CHICKENLEG;
 }
 
 public abstract class Customer extends Character {
@@ -414,9 +485,17 @@ public abstract class Customer extends Character {
         this.direction = this.findDirection();
         this.moveCounter = 0;
         this.leaving = false;
-        this.likes = new ItemType[]{};
-        this.dislikes = new ItemType[]{ItemType.BEER};
+        this.likes = new ItemType[0];
+        this.dislikes = new ItemType[0];
         this.enter();
+    }
+
+    public void setLikes(ItemType[] likes) {
+        this.likes = likes;
+    }
+
+    public void setDislikes(ItemType[] dislikes) {
+        this.dislikes = dislikes;
     }
 
     public abstract void draw();
@@ -426,12 +505,18 @@ public abstract class Customer extends Character {
     }
 
     public void useItem(EnvironmentItem item) {
+        if(this.leaving)
+            return;
+        
         if(item instanceof Beer) {
             this.reaction(ItemType.BEER);
-            this.money.buy(item);
             //TODO: If the item is correct as to what they want, + lots. Diminishing returns based on likes and dislikes
             //TODO: Could have it so that new patrons declare what they like?
+        } else if(item instanceof ChickenLeg) {
+            this.reaction(ItemType.CHICKENLEG);
         }
+
+        this.money.buy(item);
 
         if(this.money.getAmount() < 10) {
             this.leave();
@@ -592,10 +677,15 @@ public class Gold {
     }
 
     public void buy(EnvironmentItem item) {
+        int val = 0;
         if(item instanceof Beer) {
-            this.amount -= 10;
-            controller.addInnGold(10);
+            val = 10;
+        } else if(item instanceof ChickenLeg) {
+            val = 5;
         }
+
+        this.amount -= val;
+        controller.addInnGold(val);
     }
 
 }
@@ -767,7 +857,12 @@ public class Popularity {
     public int[] getPopularityLevels() {
         return new int[] {this.knightPopularityLevel};
     }
+
+    public int getKnightPopularityLevel() {
+        return this.knightPopularityLevel;
+    }
 }
+
 
 /**
 * The spawner class is used to add characters to the game.
@@ -794,7 +889,32 @@ public class Spawner {
     public Customer spawnCustomer() {
         int goldAmount = 50;
         int popularity = 50;
-        return new Knight(this.doorPos.x + 10, displayHeight - (displayHeight/10), popularity, goldAmount);
+        Customer customer;
+        customer = new Knight(this.doorPos.x + 10, displayHeight - (displayHeight/10), popularity, goldAmount);
+        generateLikesAndDislikes(customer, controller.popularity.getKnightPopularityLevel());
+        return customer;
+    }
+
+    private void generateLikesAndDislikes(Customer customer, int popularityLevel) {
+        //TODO: Give likes and dislikes based on accumulated gold and not popularity.
+        ArrayList<ItemType> items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
+        int itemNumber = popularityLevel;
+        ItemType[] likedItems = new ItemType[itemNumber];
+        ItemType[] dislikedItems = new ItemType[itemNumber];
+
+        for(int i = 0; i < itemNumber; i++) {
+            int index = floor(random(0, items.size()));
+            likedItems[i] = items.get(index);
+            items.remove(index);
+
+            index = floor(random(0, items.size()));
+            dislikedItems[i] = items.get(index);
+            items.remove(index);
+        }
+
+        customer.setLikes(likedItems);
+        customer.setDislikes(dislikedItems);
+        controller.animator.newCustomer(likedItems, dislikedItems);
     }
 }
 final float HEIGHT = 30;
@@ -850,6 +970,11 @@ public abstract class Staff extends Character {
         
         if(item instanceof Keg) {
             inventory.add(new Beer(0,0));
+            item.use();
+        }
+
+        if(item instanceof Chicken) {
+            inventory.add(new ChickenLeg(0,0));
             item.use();
         }
     }

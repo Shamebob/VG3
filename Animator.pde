@@ -1,5 +1,6 @@
 public class Animator {
-    float actionBarStartX, actionBarHeight, infoStartX, infoWidth;
+    float actionBarStartX, actionBarHeight, infoStartX, infoWidth, customerEmotionsWidth, customerEmotionsStartX;
+    ItemType[] newCustomerLikes, newCustomerDislikes;
     PImage[] crests = new PImage[]{KNIGHT_CREST};
 
     public Animator() {
@@ -7,6 +8,15 @@ public class Animator {
         this.actionBarHeight = displayHeight/10;
         this.infoWidth = displayWidth/15;
         this.infoStartX = displayWidth - this.infoWidth;
+        this.customerEmotionsWidth = displayWidth/4 - this.infoWidth;
+        this.customerEmotionsStartX = displayWidth - this.infoWidth - this.customerEmotionsWidth;
+        this.newCustomerLikes = new ItemType[0];
+        this.newCustomerDislikes = new ItemType[0];
+    }
+
+    public void newCustomer(ItemType[] likes, ItemType[] dislikes) {
+        this.newCustomerLikes = likes;
+        this.newCustomerDislikes = dislikes;
     }
 
     public void drawActiveGame(Controller controller) {
@@ -41,6 +51,7 @@ public class Animator {
         rect(0, displayHeight - this.actionBarHeight, displayWidth, this.actionBarHeight);
         this.drawActionBar(controller);
         this.drawInfo(controller);
+        this.drawCustomerEmotions(controller);
         this.drawPopularity(controller);
     }
 
@@ -95,5 +106,42 @@ public class Animator {
         } else {
             text("Day " + controller.time.day + "\n" + controller.time.hour + ":" + controller.time.minute + "\nGold: " + controller.gold.getAmount(), this.infoStartX + 5, displayHeight - this.actionBarHeight + 20);
         }
+    }
+
+    private void drawCustomerEmotions(Controller controller) {
+        fill(255, 255, 255);
+        rect(this.customerEmotionsStartX, displayHeight - this.actionBarHeight, this.customerEmotionsWidth, this.actionBarHeight);
+        image(HAPPY, this.customerEmotionsStartX + (this.customerEmotionsWidth/4) - 10, displayHeight - (actionBarHeight - (this.actionBarHeight/10)), 20, 20);
+        image(SAD, this.customerEmotionsStartX + (3 * (this.customerEmotionsWidth/4)) - 10, displayHeight - (actionBarHeight - (this.actionBarHeight/10)), 20, 20);
+
+        float imageSpace = this.customerEmotionsWidth/6;
+        float imageY = displayHeight - (this.actionBarHeight/2);
+        float imageHeight = this.actionBarHeight/4;
+        float currentPoint = this.customerEmotionsStartX + (imageSpace/4);
+        float imageWidth = imageSpace/2;
+
+        for(ItemType item : this.newCustomerLikes) {
+            drawItemType(item, currentPoint, imageY, imageWidth, imageHeight);
+        }
+
+        currentPoint = this.customerEmotionsStartX + (this.customerEmotionsWidth/2) + (imageSpace/4);
+
+        for(ItemType item : this.newCustomerDislikes) {
+            drawItemType(item, currentPoint, imageY, imageWidth, imageHeight);
+        }
+
+    }
+
+    public void drawItemType(ItemType item, float x, float y, float width, float height) {
+        PImage itemImage = null;
+
+        if(item == ItemType.BEER) {
+            itemImage = BEER;
+        } else if(item == ItemType.CHICKENLEG) {
+            itemImage = CHICKEN_LEG;
+        }
+
+        if(itemImage != null)
+            image(itemImage, x, y, width, height);
     }
 }

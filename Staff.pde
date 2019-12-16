@@ -53,6 +53,11 @@ public abstract class Staff extends Character {
             inventory.add(new Beer(0,0));
             item.use();
         }
+
+        if(item instanceof Chicken) {
+            inventory.add(new ChickenLeg(0,0));
+            item.use();
+        }
     }
 
     public void useItem(int index) {

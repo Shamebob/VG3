@@ -14,10 +14,15 @@ public class Gold {
     }
 
     public void buy(EnvironmentItem item) {
+        int val = 0;
         if(item instanceof Beer) {
-            this.amount -= 10;
-            controller.addInnGold(10);
+            val = 10;
+        } else if(item instanceof ChickenLeg) {
+            val = 5;
         }
+
+        this.amount -= val;
+        controller.addInnGold(val);
     }
 
 }

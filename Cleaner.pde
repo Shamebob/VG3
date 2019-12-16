@@ -13,7 +13,6 @@ public class Cleaner {
         while(iter.hasNext()) {
             curObj = (EnvironmentItem) iter.next();
             if(!curObj.isActive()) {
-                System.out.println("Removing");
                 iter.remove();
             }
         }
@@ -25,7 +24,6 @@ public class Cleaner {
         while(iter.hasNext()) {
             curObj = (Feeling) iter.next();
             if(!curObj.isActive()) {
-                System.out.println("Removing");
                 iter.remove();
             }
         }

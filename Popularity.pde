@@ -24,4 +24,8 @@ public class Popularity {
     public int[] getPopularityLevels() {
         return new int[] {this.knightPopularityLevel};
     }
+
+    public int getKnightPopularityLevel() {
+        return this.knightPopularityLevel;
+    }
 }

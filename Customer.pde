@@ -1,5 +1,5 @@
 enum ItemType {
-    BEER;
+    BEER, CHICKENLEG;
 }
 
 public abstract class Customer extends Character {
@@ -20,9 +20,17 @@ public abstract class Customer extends Character {
         this.direction = this.findDirection();
         this.moveCounter = 0;
         this.leaving = false;
-        this.likes = new ItemType[]{};
-        this.dislikes = new ItemType[]{ItemType.BEER};
+        this.likes = new ItemType[0];
+        this.dislikes = new ItemType[0];
         this.enter();
+    }
+
+    public void setLikes(ItemType[] likes) {
+        this.likes = likes;
+    }
+
+    public void setDislikes(ItemType[] dislikes) {
+        this.dislikes = dislikes;
     }
 
     public abstract void draw();
@@ -32,12 +40,18 @@ public abstract class Customer extends Character {
     }
 
     public void useItem(EnvironmentItem item) {
+        if(this.leaving)
+            return;
+        
         if(item instanceof Beer) {
             this.reaction(ItemType.BEER);
-            this.money.buy(item);
             //TODO: If the item is correct as to what they want, + lots. Diminishing returns based on likes and dislikes
             //TODO: Could have it so that new patrons declare what they like?
+        } else if(item instanceof ChickenLeg) {
+            this.reaction(ItemType.CHICKENLEG);
         }
+
+        this.money.buy(item);
 
         if(this.money.getAmount() < 10) {
             this.leave();
