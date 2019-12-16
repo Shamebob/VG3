@@ -4,10 +4,8 @@ public class Knight extends Customer {
     }
 
     public void draw() {
-
-        if(this.entering)
-            super.checkEntered();
-
+        super.draw();
+        
         if(this.moveCounter % 120 == 0 && !this.leaving && !this.entering) 
             this.direction = super.findDirection();
 

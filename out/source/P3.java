@@ -475,6 +475,7 @@ public abstract class Customer extends Character {
     int moveCounter;
     boolean entering, leaving;
     ItemType[] likes, dislikes;
+    int diminishingReturn;
 
     public Customer(float x, float y, Shape shape, int popularity, int goldAmount) {
         super(x, y, shape);
@@ -487,6 +488,7 @@ public abstract class Customer extends Character {
         this.leaving = false;
         this.likes = new ItemType[0];
         this.dislikes = new ItemType[0];
+        this.diminishingReturn = 0;
         this.enter();
     }
 
@@ -498,46 +500,72 @@ public abstract class Customer extends Character {
         this.dislikes = dislikes;
     }
 
-    public abstract void draw();
+    public void draw() {
+        if (this.diminishingReturn > 0)
+            this.diminishingReturn -= 1;
+
+        if(this.entering)
+            this.checkEntered();
+    }
 
     private PVector findDirection() {
         return new PVector(random(-2, 2), random(-2, 2));
     }
 
     public void useItem(EnvironmentItem item) {
+        boolean likedItem = false;
+        ItemType itemType = null;
         if(this.leaving)
             return;
         
         if(item instanceof Beer) {
-            this.reaction(ItemType.BEER);
+            itemType = ItemType.BEER;
             //TODO: If the item is correct as to what they want, + lots. Diminishing returns based on likes and dislikes
             //TODO: Could have it so that new patrons declare what they like?
         } else if(item instanceof ChickenLeg) {
-            this.reaction(ItemType.CHICKENLEG);
+            itemType = ItemType.CHICKENLEG;
         }
 
         this.money.buy(item);
+        likedItem = this.reaction(itemType);
+        this.addSatisfaction(likedItem);
+        println("Satisfaction: : "+ this.satisfaction);
+        this.diminishingReturn = 120;
 
         if(this.money.getAmount() < 10) {
             this.leave();
         } 
     }
 
-    private void reaction(ItemType item) {
+    private void addSatisfaction(boolean likedItem) {
+        float satisfaction = 0;
+        if(likedItem) {
+            satisfaction = 25;
+        } else {
+            satisfaction = -25;
+        }
+        if(this.diminishingReturn > 0)
+            satisfaction = satisfaction/this.diminishingReturn;
+
+        this.satisfaction += satisfaction;
+    }
+
+    private boolean reaction(ItemType item) {
         for(ItemType like : this.likes) {
             if(like == item) {
                 controller.addFeeling(new Feeling(this.getX(), this.getY() - 5, Emotion.HAPPY));
-                return;
+                return true;
             }
         }
 
         for(ItemType dislike : this.dislikes) {
             if(dislike == item) {
                 controller.addFeeling(new Feeling(this.getX(), this.getY() - 5, Emotion.SAD));
-                this.satisfaction -= 10;
-                return;
+                return false;
             }
         }
+
+        return false;
     }
 
     protected void enter() {
@@ -787,10 +815,8 @@ public class Knight extends Customer {
     }
 
     public void draw() {
-
-        if(this.entering)
-            super.checkEntered();
-
+        super.draw();
+        
         if(this.moveCounter % 120 == 0 && !this.leaving && !this.entering) 
             this.direction = super.findDirection();
 
