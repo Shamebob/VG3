@@ -31,7 +31,9 @@ public class P3 extends PApplet {
 
 // Keep controller as global to control the gamestate.
 Controller controller;
-PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, HERO_IDLE, WINDOW, HAPPY, SAD;
+PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, WINDOW, INDOOR_FLOOR, GRASS, PATH;
+PImage HERO_DOWN_IDLE, HERO_UP_IDLE, HERO_LEFT_IDLE, HERO_RIGHT_IDLE, HERO_PICKUP, HERO_USEITEM;
+PImage HAPPY, SAD;
 PImage KNIGHT_IDLE, KNIGHT_CREST;
 PImage KEG, BEER, CHICKEN, CHICKEN_LEG;
 
@@ -45,7 +47,14 @@ public void setup() {
   INSIDE_WALL = loadImage("inside_wall.png");
   DOOR = loadImage("door.png");
   KEG = loadImage("keg.png");
-  HERO_IDLE = loadImage("hero_idle.png");
+  HERO_DOWN_IDLE = loadImage("player_idle.png");
+  HERO_RIGHT_IDLE = loadImage("player_right1.png");
+  HERO_LEFT_IDLE = loadImage("player_left1.png");
+  HERO_UP_IDLE = loadImage("player_up1.png");
+  HERO_PICKUP = loadImage("player_pickup.png");
+  HERO_USEITEM = loadImage("player_useitem.png");
+
+
   WINDOW = loadImage("window.png");
   BEER = loadImage("beer.png");
   HAPPY = loadImage("happy.png");
@@ -54,6 +63,9 @@ public void setup() {
   KNIGHT_CREST = loadImage("knight_crest.png");
   CHICKEN = loadImage("whole_chicken.png");
   CHICKEN_LEG = loadImage("chicken_leg.png");
+  INDOOR_FLOOR = loadImage("indoor_floor.png");
+  GRASS = loadImage("grass.png");
+  PATH = loadImage("path.png");
 
   controller = new Controller();
   controller.start();
@@ -140,7 +152,6 @@ public class Animator {
 
     public void drawActiveGame(Controller controller) {
         this.drawTimedBackground(controller.time);
-        this.drawHUD(controller);
         controller.inn.draw();
         controller.player.draw();
 
@@ -155,13 +166,14 @@ public class Animator {
         for(Feeling feeling: controller.feelings) {
             feeling.draw();
         }
+
+        this.drawHUD(controller);
     }
 
 
     public void endDay(Controller controller) {
         this.drawTimedBackground(controller.time);
         textSize(16);
-        this.drawHUD(controller);
         controller.inn.draw();
 
         fill(255, 255, 255);
@@ -172,6 +184,8 @@ public class Animator {
         for(EnvironmentItem item : controller.items) {
             item.draw();
         }
+
+        this.drawHUD(controller);
     }
 
     private void drawTimedBackground(Time time) {
@@ -665,6 +679,37 @@ public class Feeling extends Character {
         }
     }
 }
+enum FloorType {
+    GRASS, INDOOR, PATH;
+}
+
+public class Floor extends GameObject{
+    float width, height;
+    PImage imageType;
+    FloorType floorType;
+
+    public Floor(float x, float y, float width, float height, FloorType floorType) {
+        super(x, y, ((Shape) new Rectangle2D.Float(x, y, width, height)));
+        this.width = width;
+        this.height = height;
+        this.floorType = floorType;
+        findImageType();
+    }
+
+    public void draw() {
+        image(this.imageType, this.getX(), this.getY(), this.width, this.height);
+    }
+
+    private void findImageType() {
+        if(this.floorType == FloorType.GRASS) {
+            this.imageType = GRASS;
+        } else if(this.floorType == FloorType.INDOOR) {
+            this.imageType = INDOOR_FLOOR;
+        } else if(this.floorType == FloorType.PATH) {
+            this.imageType = PATH;
+        } 
+    }
+}
 
 
 
@@ -750,6 +795,7 @@ public class Gold {
 public class Inn {
     private float startX, startY, endX, endY;
     private ArrayList<Wall> walls = new ArrayList<Wall>();
+    private ArrayList<Floor> floor = new ArrayList<Floor>();
     PVector doorPos;
 
     public Inn() {
@@ -758,6 +804,7 @@ public class Inn {
         this.startY = displayHeight/4 * 3;
         this.endY = displayHeight/4;
         this.buildWalls();
+        this.constructFloor();
     }
 
     public void buildWalls() {
@@ -793,7 +840,62 @@ public class Inn {
         System.out.println("Number of walls: " + this.walls.size());
     }
 
+     public void constructFloor() {
+        float floorWidth = displayWidth/100 * 6;
+        int widthCount = ceil(PApplet.parseInt(displayWidth/floorWidth)) + 1;
+        float floorHeight = displayWidth/100 * 6;
+        int heightCount = ceil(PApplet.parseInt(displayHeight/floorHeight));
+        float curX = 0;
+        float curY = 0;
+
+        // Make the grass Tiles
+        for(int i = 0; i < heightCount; i++) {
+            curX = 0;
+            for(int j = 0; j < widthCount; j++) {
+                if (!((curX > this.startX && curX < this.endX - floorWidth) && (curY <= this.startY) && (curY >= this.endY))) {
+                    this.floor.add(new Floor(curX, curY, floorWidth, floorHeight, FloorType.GRASS));
+                }
+                curX += floorWidth;
+            }
+            curY += floorHeight;
+
+        }
+
+        // Make the inn tiles
+        float innWidth = (this.endX - this.startX) - 25;
+        float innHeight = (this.startY - this.endY);
+        floorWidth = innWidth/10;
+        floorHeight = innWidth/10;
+        widthCount = ceil(PApplet.parseInt(innWidth/floorWidth));
+        heightCount = ceil(PApplet.parseInt(innHeight/floorHeight)) + 1;
+        curY = this.endY;
+        for(int i = 0; i < heightCount; i++) {
+            curX = this.startX;
+            for(int j = 0; j < widthCount; j++) {
+                this.floor.add(new Floor(curX, curY, floorWidth, floorHeight, FloorType.INDOOR));
+                curX += floorWidth;
+            }
+            curY += floorHeight;
+        }
+
+        curX = this.doorPos.x;
+        curY = this.doorPos.y;
+        floorWidth = displayWidth/100 * 3;
+        float doorToHUDHeight = displayHeight - this.doorPos.y;
+        heightCount = ceil(PApplet.parseInt(doorToHUDHeight/floorHeight)) + 1;
+        for(int i = 0; i < heightCount; i++) {
+            this.floor.add(new Floor(curX, curY, floorWidth, floorHeight, FloorType.PATH));
+            curY += floorHeight;
+        }
+
+        
+    }
+
     public void draw() {
+        for(Floor floor : this.floor) {
+            floor.draw();
+        }
+
         for(Wall wall : this.walls) {
             wall.draw();
         }
@@ -874,16 +976,51 @@ public abstract class NPC extends Character{
 
 }
 public class Player extends Staff {
+    PImage playerImage;
     public Player (float x, float y) {
         super(x, y);
+        this.playerImage = HERO_DOWN_IDLE;
     }
 
     public void setFacing(Facing direction) {
+        if(direction == this.currentFacing)
+            return;
+        
         this.currentFacing = direction;
+
+        switch (direction) {
+            case UP:
+                this.playerImage = HERO_UP_IDLE;
+                break;
+            
+            case DOWN:
+                this.playerImage = HERO_DOWN_IDLE;
+                break;
+            
+            case LEFT:
+                this.playerImage = HERO_LEFT_IDLE;
+                break;
+            
+            case RIGHT:
+                this.playerImage = HERO_RIGHT_IDLE;
+                break;
+        }
+    }
+
+    @Override
+    public void pickupItem() {
+        this.playerImage = HERO_PICKUP;
+        super.pickupItem();
+    }
+
+    @Override
+    public void useItem(int index) {
+        this.playerImage = HERO_USEITEM;
+        super.useItem(index);
     }
 
     public void draw() {
-        image(HERO_IDLE, this.getX(), this.getY(), HEIGHT, WIDTH);
+        image(this.playerImage, this.getX(), this.getY(), HEIGHT, WIDTH);
         super.draw();
     }
 }
@@ -1049,8 +1186,8 @@ public class Time {
     int spawnTimer, spawnCounter;
 
     public Time() {
-        this.hour = 23;
-        this.minute = 58;
+        this.hour = 8;
+        this.minute = 0;
         this.day = 1;
         this.second = 0;
         this.dayOver = false;
@@ -1127,6 +1264,7 @@ public class Wall extends GameObject{
         } else if(this.wallType == WallType.TOP) {
             image(INSIDE_WALL, this.getX(), this.getY(), this.width, this.height);
         } else if(this.wallType == WallType.DOOR) {
+            image(INDOOR_FLOOR, this.getX(), this.getY(), this.width, this.height);
             image(DOOR, this.getX(), this.getY(), this.width, this.height);
         } else if(this.wallType == WallType.WINDOW) {
             image(WINDOW, this.getX(), this.getY(), this.width, this.height);

@@ -4,7 +4,9 @@ import java.awt.Shape;
 
 // Keep controller as global to control the gamestate.
 Controller controller;
-PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, HERO_IDLE, WINDOW, HAPPY, SAD;
+PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, WINDOW, INDOOR_FLOOR, GRASS, PATH;
+PImage HERO_DOWN_IDLE, HERO_UP_IDLE, HERO_LEFT_IDLE, HERO_RIGHT_IDLE, HERO_PICKUP, HERO_USEITEM;
+PImage HAPPY, SAD;
 PImage KNIGHT_IDLE, KNIGHT_CREST;
 PImage KEG, BEER, CHICKEN, CHICKEN_LEG;
 
@@ -18,7 +20,14 @@ void setup() {
   INSIDE_WALL = loadImage("inside_wall.png");
   DOOR = loadImage("door.png");
   KEG = loadImage("keg.png");
-  HERO_IDLE = loadImage("hero_idle.png");
+  HERO_DOWN_IDLE = loadImage("player_idle.png");
+  HERO_RIGHT_IDLE = loadImage("player_right1.png");
+  HERO_LEFT_IDLE = loadImage("player_left1.png");
+  HERO_UP_IDLE = loadImage("player_up1.png");
+  HERO_PICKUP = loadImage("player_pickup.png");
+  HERO_USEITEM = loadImage("player_useitem.png");
+
+
   WINDOW = loadImage("window.png");
   BEER = loadImage("beer.png");
   HAPPY = loadImage("happy.png");
@@ -27,6 +36,9 @@ void setup() {
   KNIGHT_CREST = loadImage("knight_crest.png");
   CHICKEN = loadImage("whole_chicken.png");
   CHICKEN_LEG = loadImage("chicken_leg.png");
+  INDOOR_FLOOR = loadImage("indoor_floor.png");
+  GRASS = loadImage("grass.png");
+  PATH = loadImage("path.png");
 
   controller = new Controller();
   controller.start();

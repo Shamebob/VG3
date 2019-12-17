@@ -21,7 +21,6 @@ public class Animator {
 
     public void drawActiveGame(Controller controller) {
         this.drawTimedBackground(controller.time);
-        this.drawHUD(controller);
         controller.inn.draw();
         controller.player.draw();
 
@@ -36,13 +35,14 @@ public class Animator {
         for(Feeling feeling: controller.feelings) {
             feeling.draw();
         }
+
+        this.drawHUD(controller);
     }
 
 
     public void endDay(Controller controller) {
         this.drawTimedBackground(controller.time);
         textSize(16);
-        this.drawHUD(controller);
         controller.inn.draw();
 
         fill(255, 255, 255);
@@ -53,6 +53,8 @@ public class Animator {
         for(EnvironmentItem item : controller.items) {
             item.draw();
         }
+
+        this.drawHUD(controller);
     }
 
     private void drawTimedBackground(Time time) {

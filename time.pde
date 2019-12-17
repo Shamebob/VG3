@@ -4,8 +4,8 @@ public class Time {
     int spawnTimer, spawnCounter;
 
     public Time() {
-        this.hour = 23;
-        this.minute = 58;
+        this.hour = 8;
+        this.minute = 0;
         this.day = 1;
         this.second = 0;
         this.dayOver = false;

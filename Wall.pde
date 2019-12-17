@@ -19,6 +19,7 @@ public class Wall extends GameObject{
         } else if(this.wallType == WallType.TOP) {
             image(INSIDE_WALL, this.getX(), this.getY(), this.width, this.height);
         } else if(this.wallType == WallType.DOOR) {
+            image(INDOOR_FLOOR, this.getX(), this.getY(), this.width, this.height);
             image(DOOR, this.getX(), this.getY(), this.width, this.height);
         } else if(this.wallType == WallType.WINDOW) {
             image(WINDOW, this.getX(), this.getY(), this.width, this.height);
