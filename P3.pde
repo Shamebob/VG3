@@ -81,23 +81,23 @@ void keyPressed() {
           break;
 
         case '1':
-          controller.player.useItem(1);
+          controller.itemKeyPress(1);
           break;
 
         case '2':
-          controller.player.useItem(2);
+          controller.itemKeyPress(2);
           break;
 
         case '3':
-          controller.player.useItem(3);
+          controller.itemKeyPress(3);
           break;
         
         case '4':
-          controller.player.useItem(4);
+          controller.itemKeyPress(4);
           break;
 
         case '5':
-          controller.player.useItem(5);
+          controller.itemKeyPress(5);
           break;
         
         case ' ':

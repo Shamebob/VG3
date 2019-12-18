@@ -110,6 +110,10 @@ public class Inn {
             wall.draw();
         }
     }
+
+    public Wall getDoor() {
+        return this.door;
+    }
     public float getStartX() {
         return this.startX;
     }
@@ -128,6 +132,10 @@ public class Inn {
 
     public PVector getDoorPos() {
         return this.doorPos.copy();
+    }
+
+    public ArrayList<Wall> getWalls() {
+        return this.walls;
     }
 
     public boolean wallCollision(PVector position) {

@@ -72,7 +72,7 @@ public class Spawner {
         ItemType[] dislikedItems = new ItemType[itemNumber];
 
         for(int i = 0; i < itemNumber; i++) {
-            int index = floor(random(0, items.size() - 1));
+            int index = floor(random(0, items.size()));
             likedItems[i] = items.get(index);
             items.remove(index);
 

@@ -56,6 +56,9 @@ public class Animator {
 
         controller.inn.drawWalls();
         this.drawHUD(controller);
+
+        if(controller.buildMode)
+            controller.build.draw();
     }
 
     private void drawTimedBackground(Time time) {
@@ -106,10 +109,36 @@ public class Animator {
             currentPoint += actionBoxWidth;
         }
 
+        if(controller.buildMode) {
+            drawBuildItems(actionBoxWidth);
+        } else {
+            drawInventoryItems(actionBoxWidth);
+        }
+    }
+
+    private void drawBuildItems(float actionBoxWidth) {
+        for(EnvironmentItem item : controller.build.purchaseItems) {
+            item.draw();
+        }
+    }
+
+    public void setupBuildItems() {
+        float actionBoxWidth = (displayWidth/2)/5;
+        PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/3));
+        PVector factorChange = new PVector(actionBoxWidth, 0);
+        for(EnvironmentItem item : controller.build.purchaseItems) {
+            item.setPos(currentPos.copy());
+            currentPos = currentPos.add(factorChange);
+        }
+    }
+
+
+
+    private void drawInventoryItems(float actionBoxWidth) {
         PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/3));
         PVector factorChange = new PVector(actionBoxWidth, 0);
         for(EnvironmentItem item : controller.player.inventory) {
-            item.setPos(currentPos);
+            item.setPos(currentPos.copy());
             item.draw();
             currentPos = currentPos.add(factorChange);
         }

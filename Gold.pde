@@ -20,6 +20,14 @@ public class Gold {
         return this.accumulated;
     }
 
+    public boolean buyItem(int amount) {
+        if(this.amount < amount)
+            return false;
+
+        this.amount -= amount;
+        return true;
+    }
+
     public void buy(EnvironmentItem item) {
         int val = 0;
         if(item instanceof Beer) {

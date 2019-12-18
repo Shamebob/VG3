@@ -108,23 +108,23 @@ public void keyPressed() {
           break;
 
         case '1':
-          controller.player.useItem(1);
+          controller.itemKeyPress(1);
           break;
 
         case '2':
-          controller.player.useItem(2);
+          controller.itemKeyPress(2);
           break;
 
         case '3':
-          controller.player.useItem(3);
+          controller.itemKeyPress(3);
           break;
         
         case '4':
-          controller.player.useItem(4);
+          controller.itemKeyPress(4);
           break;
 
         case '5':
-          controller.player.useItem(5);
+          controller.itemKeyPress(5);
           break;
         
         case ' ':
@@ -189,6 +189,9 @@ public class Animator {
 
         controller.inn.drawWalls();
         this.drawHUD(controller);
+
+        if(controller.buildMode)
+            controller.build.draw();
     }
 
     private void drawTimedBackground(Time time) {
@@ -239,10 +242,36 @@ public class Animator {
             currentPoint += actionBoxWidth;
         }
 
+        if(controller.buildMode) {
+            drawBuildItems(actionBoxWidth);
+        } else {
+            drawInventoryItems(actionBoxWidth);
+        }
+    }
+
+    private void drawBuildItems(float actionBoxWidth) {
+        for(EnvironmentItem item : controller.build.purchaseItems) {
+            item.draw();
+        }
+    }
+
+    public void setupBuildItems() {
+        float actionBoxWidth = (displayWidth/2)/5;
+        PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/3));
+        PVector factorChange = new PVector(actionBoxWidth, 0);
+        for(EnvironmentItem item : controller.build.purchaseItems) {
+            item.setPos(currentPos.copy());
+            currentPos = currentPos.add(factorChange);
+        }
+    }
+
+
+
+    private void drawInventoryItems(float actionBoxWidth) {
         PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/3));
         PVector factorChange = new PVector(actionBoxWidth, 0);
         for(EnvironmentItem item : controller.player.inventory) {
-            item.setPos(currentPos);
+            item.setPos(currentPos.copy());
             item.draw();
             currentPos = currentPos.add(factorChange);
         }
@@ -345,6 +374,75 @@ public class Boss extends Customer {
         super.leave();
     }
 
+
+}
+public class Build {
+    EnvironmentItem[] purchaseItems = new EnvironmentItem[]{new Keg(0, 0), new Chicken(0, 0)};
+    PVector buildSquarePos;
+    Shape shape;
+    float buildSquareWidth, buildSquareHeight;
+
+    public Build() {
+        this.buildSquarePos = new PVector(displayWidth/2, displayHeight/2);
+        this.shape = new Rectangle2D.Float(buildSquarePos.x, buildSquarePos.y, buildSquareWidth, buildSquareHeight);
+        this.buildSquareWidth = 30;
+        this.buildSquareHeight = 30;
+    }
+
+    public void moveBuildSquare(Facing direction) {
+        switch (direction) {
+            case UP:
+                buildSquarePos.y -= buildSquareHeight;
+                break;
+
+            case LEFT:
+                buildSquarePos.x -= buildSquareWidth;
+                break;
+
+            case DOWN:
+                buildSquarePos.y += buildSquareHeight;
+                break;
+
+            case RIGHT:
+                buildSquarePos.x += buildSquareWidth;
+                break;
+        }
+
+        this.shape = new Rectangle2D.Float(buildSquarePos.x, buildSquarePos.y, buildSquareWidth, buildSquareHeight);
+    }
+
+    public void draw() {
+        fill(255, 0, 0, 100);
+        rect(buildSquarePos.x, buildSquarePos.y, buildSquareWidth, buildSquareHeight);
+    }
+
+    public EnvironmentItem placeItem(int itemIndex) {
+        float x = buildSquarePos.x;
+        float y = buildSquarePos.y;
+        EnvironmentItem item = null;
+        int cost = 0;
+
+        if(!controller.checkPlacementLocation(this.shape))
+            return item;
+
+        switch(itemIndex) {
+            case 1:
+                item = new Keg(x, y);
+                cost = 50;
+                break;
+            
+            case 2:
+                item = new Chicken(x,y);
+                cost = 25;
+                break;
+        }
+
+        if(controller.gold.buyItem(cost)) {
+            return item;
+        } else {
+            return null;
+        }
+    }
 
 }
 public abstract class Character extends GameObject {
@@ -482,7 +580,7 @@ public class CollisionDetector {
 /* for resolving and updating the game state, drawing the game as well as monitoring if the game is over.
 */
 public class Controller {
-    boolean gameInPlay, endDay, buildMove;
+    boolean gameInPlay, endDay, buildMode;
     Player player;
     Time time;
     Inn inn;
@@ -496,9 +594,25 @@ public class Controller {
     Spawner spawner = new Spawner();
     Animator animator = new Animator();
     Popularity popularity = new Popularity();
+    Build build = new Build();
     
     public Controller () {
         this.gold = new Gold();
+    }
+
+    public void start() {
+        this.endDay = true;
+        this.time = new Time();
+        this.inn = new Inn();
+        this.buildMode = true;
+        this.animator.setupBuildItems();
+        this.gold.addGold(100);
+        this.calculateCustomers();
+        this.spawner.setDoorPos(this.inn.getDoorPos());
+        this.gameInPlay = true;
+        this.player = spawner.spawnPlayer();
+        this.items.add(new Keg(displayWidth/2, displayHeight/2));
+        this.items.add(new Chicken(displayWidth/2 + 100, displayHeight/2 + 100));
     }
 
     public void addInnGold(int amount) {
@@ -517,7 +631,25 @@ public class Controller {
             this.customers = new ArrayList<Customer>();
             this.customers.add(spawner.spawnCustomer());
             this.endDay = false;
+            this.buildMode = false;
         }
+    }
+
+    public boolean checkPlacementLocation(Shape shape) {
+        for(EnvironmentItem item : this.items) {
+            if(collisionDetector.checkCollision(item.getShape(), shape))
+                return false;
+        }
+        
+        for(Wall wall : this.inn.getWalls()) {
+            if(collisionDetector.checkCollision(wall.getShape(), shape))
+                return false;
+        }
+
+        if(collisionDetector.checkCollision(this.inn.getDoor().getShape(), shape))
+            return false;
+
+        return true;
     }
 
     /**
@@ -533,21 +665,16 @@ public class Controller {
         this.time.setSpawnTimer(960/this.spawner.getCustomersInDay());
     }
 
-    public void start() {
-        this.endDay = true;
-        this.time = new Time();
-        this.inn = new Inn();
-        this.calculateCustomers();
-        this.spawner.setDoorPos(this.inn.getDoorPos());
-        this.gameInPlay = true;
-        this.player = spawner.spawnPlayer();
-        // this.spawnBoss();
-        this.items.add(new Keg(displayWidth/2, displayHeight/2));
-        this.items.add(new Chicken(displayWidth/2 + 100, displayHeight/2 + 100));
-    }
 
-    public void spawnBoss() {
-        Boss boss = spawner.spawnKnightBoss();
+    public void spawnBoss(Faction faction) {
+        Boss boss;
+
+        if(faction == Faction.KNIGHT) {
+            boss = spawner.spawnKnightBoss();
+        } else {
+            boss = spawner.spawnKnightBoss();
+        }
+    
         for(Customer customer : boss.entourage) {
             this.customers.add(customer);
         }
@@ -557,9 +684,13 @@ public class Controller {
 
     public void movePlayer(float x, float y, Facing direction) {
         PVector change = new PVector(x,y);
-        if(checkMove(this.player.getPos(), change)) {
-            this.player.move(change);
-            this.player.setFacing(direction);
+        if(buildMode) {
+            build.moveBuildSquare(direction);
+        } else {
+            if(checkMove(this.player.getPos(), change)) {
+                this.player.move(change);
+                this.player.setFacing(direction);
+            }
         }
     }
 
@@ -600,6 +731,16 @@ public class Controller {
             if(this.collisionDetector.checkCollision(customer.getShape(), shape)) {
                 customer.useItem(item);
             }
+        }
+    }
+
+    public void itemKeyPress(int itemKey) {
+        if(buildMode) {
+            EnvironmentItem item = build.placeItem(itemKey);
+            if(item!= null)
+                this.items.add(item);
+        } else {
+            player.useItem(itemKey);
         }
     }
 
@@ -907,6 +1048,14 @@ public class Gold {
         return this.accumulated;
     }
 
+    public boolean buyItem(int amount) {
+        if(this.amount < amount)
+            return false;
+
+        this.amount -= amount;
+        return true;
+    }
+
     public void buy(EnvironmentItem item) {
         int val = 0;
         if(item instanceof Beer) {
@@ -1032,6 +1181,10 @@ public class Inn {
             wall.draw();
         }
     }
+
+    public Wall getDoor() {
+        return this.door;
+    }
     public float getStartX() {
         return this.startX;
     }
@@ -1050,6 +1203,10 @@ public class Inn {
 
     public PVector getDoorPos() {
         return this.doorPos.copy();
+    }
+
+    public ArrayList<Wall> getWalls() {
+        return this.walls;
     }
 
     public boolean wallCollision(PVector position) {
@@ -1259,7 +1416,7 @@ public class Spawner {
         ItemType[] dislikedItems = new ItemType[itemNumber];
 
         for(int i = 0; i < itemNumber; i++) {
-            int index = floor(random(0, items.size() - 1));
+            int index = floor(random(0, items.size()));
             likedItems[i] = items.get(index);
             items.remove(index);
 
@@ -1343,6 +1500,49 @@ public abstract class Staff extends Character {
         }
     }
 }
+enum WallType {
+    BOTTOM, SIDE, TOP, DOOR, WINDOW;
+}
+
+public class Wall extends GameObject{
+    float width, height;
+    WallType wallType;
+
+    public Wall(float x, float y, float width, float height, WallType wallType) {
+        super(x, y, ((Shape) new Rectangle2D.Float(x, y, width, height)));
+        this.width = width;
+        this.height = height;
+        this.wallType = wallType;
+    }
+
+    public void draw() {
+        if(this.wallType == WallType.BOTTOM) {
+            image(OUTSIDE_WALL, this.getX(), this.getY(), this.width, this.height);
+        } else if(this.wallType == WallType.TOP) {
+            image(INSIDE_WALL, this.getX(), this.getY(), this.width, this.height);
+        } else if(this.wallType == WallType.DOOR) {
+            image(INDOOR_FLOOR, this.getX(), this.getY(), this.width, this.height);
+            image(DOOR, this.getX(), this.getY(), this.width, this.height);
+        } else if(this.wallType == WallType.WINDOW) {
+            image(WINDOW, this.getX(), this.getY(), this.width, this.height);
+        } else {
+            fill(128, 128, 128);
+            rect(this.getX(), this.getY(), this.width, this.height);
+        }
+    }
+}
+public class Worker extends Staff {
+    public Worker (float x, float y) {
+        super(x, y);
+    }
+
+    public void draw() {
+        fill(0, 255, 0);
+        rect(this.getX(), this.getY(), HEIGHT,WIDTH);
+        super.draw();
+    }
+
+}
 public class Time {
     int day, hour, minute, second;
     boolean dayOver;
@@ -1404,49 +1604,6 @@ public class Time {
             this.second = 0;
         }
     }
-}
-enum WallType {
-    BOTTOM, SIDE, TOP, DOOR, WINDOW;
-}
-
-public class Wall extends GameObject{
-    float width, height;
-    WallType wallType;
-
-    public Wall(float x, float y, float width, float height, WallType wallType) {
-        super(x, y, ((Shape) new Rectangle2D.Float(x, y, width, height)));
-        this.width = width;
-        this.height = height;
-        this.wallType = wallType;
-    }
-
-    public void draw() {
-        if(this.wallType == WallType.BOTTOM) {
-            image(OUTSIDE_WALL, this.getX(), this.getY(), this.width, this.height);
-        } else if(this.wallType == WallType.TOP) {
-            image(INSIDE_WALL, this.getX(), this.getY(), this.width, this.height);
-        } else if(this.wallType == WallType.DOOR) {
-            image(INDOOR_FLOOR, this.getX(), this.getY(), this.width, this.height);
-            image(DOOR, this.getX(), this.getY(), this.width, this.height);
-        } else if(this.wallType == WallType.WINDOW) {
-            image(WINDOW, this.getX(), this.getY(), this.width, this.height);
-        } else {
-            fill(128, 128, 128);
-            rect(this.getX(), this.getY(), this.width, this.height);
-        }
-    }
-}
-public class Worker extends Staff {
-    public Worker (float x, float y) {
-        super(x, y);
-    }
-
-    public void draw() {
-        fill(0, 255, 0);
-        rect(this.getX(), this.getY(), HEIGHT,WIDTH);
-        super.draw();
-    }
-
 }
   public void settings() {  fullScreen(); }
   static public void main(String[] passedArgs) {

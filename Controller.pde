@@ -3,7 +3,7 @@
 /* for resolving and updating the game state, drawing the game as well as monitoring if the game is over.
 */
 public class Controller {
-    boolean gameInPlay, endDay, buildMove;
+    boolean gameInPlay, endDay, buildMode;
     Player player;
     Time time;
     Inn inn;
@@ -17,9 +17,25 @@ public class Controller {
     Spawner spawner = new Spawner();
     Animator animator = new Animator();
     Popularity popularity = new Popularity();
+    Build build = new Build();
     
     public Controller () {
         this.gold = new Gold();
+    }
+
+    public void start() {
+        this.endDay = true;
+        this.time = new Time();
+        this.inn = new Inn();
+        this.buildMode = true;
+        this.animator.setupBuildItems();
+        this.gold.addGold(100);
+        this.calculateCustomers();
+        this.spawner.setDoorPos(this.inn.getDoorPos());
+        this.gameInPlay = true;
+        this.player = spawner.spawnPlayer();
+        this.items.add(new Keg(displayWidth/2, displayHeight/2));
+        this.items.add(new Chicken(displayWidth/2 + 100, displayHeight/2 + 100));
     }
 
     public void addInnGold(int amount) {
@@ -38,7 +54,25 @@ public class Controller {
             this.customers = new ArrayList<Customer>();
             this.customers.add(spawner.spawnCustomer());
             this.endDay = false;
+            this.buildMode = false;
         }
+    }
+
+    public boolean checkPlacementLocation(Shape shape) {
+        for(EnvironmentItem item : this.items) {
+            if(collisionDetector.checkCollision(item.getShape(), shape))
+                return false;
+        }
+        
+        for(Wall wall : this.inn.getWalls()) {
+            if(collisionDetector.checkCollision(wall.getShape(), shape))
+                return false;
+        }
+
+        if(collisionDetector.checkCollision(this.inn.getDoor().getShape(), shape))
+            return false;
+
+        return true;
     }
 
     /**
@@ -54,21 +88,16 @@ public class Controller {
         this.time.setSpawnTimer(960/this.spawner.getCustomersInDay());
     }
 
-    public void start() {
-        this.endDay = true;
-        this.time = new Time();
-        this.inn = new Inn();
-        this.calculateCustomers();
-        this.spawner.setDoorPos(this.inn.getDoorPos());
-        this.gameInPlay = true;
-        this.player = spawner.spawnPlayer();
-        // this.spawnBoss();
-        this.items.add(new Keg(displayWidth/2, displayHeight/2));
-        this.items.add(new Chicken(displayWidth/2 + 100, displayHeight/2 + 100));
-    }
 
-    public void spawnBoss() {
-        Boss boss = spawner.spawnKnightBoss();
+    public void spawnBoss(Faction faction) {
+        Boss boss;
+
+        if(faction == Faction.KNIGHT) {
+            boss = spawner.spawnKnightBoss();
+        } else {
+            boss = spawner.spawnKnightBoss();
+        }
+    
         for(Customer customer : boss.entourage) {
             this.customers.add(customer);
         }
@@ -78,9 +107,13 @@ public class Controller {
 
     public void movePlayer(float x, float y, Facing direction) {
         PVector change = new PVector(x,y);
-        if(checkMove(this.player.getPos(), change)) {
-            this.player.move(change);
-            this.player.setFacing(direction);
+        if(buildMode) {
+            build.moveBuildSquare(direction);
+        } else {
+            if(checkMove(this.player.getPos(), change)) {
+                this.player.move(change);
+                this.player.setFacing(direction);
+            }
         }
     }
 
@@ -121,6 +154,16 @@ public class Controller {
             if(this.collisionDetector.checkCollision(customer.getShape(), shape)) {
                 customer.useItem(item);
             }
+        }
+    }
+
+    public void itemKeyPress(int itemKey) {
+        if(buildMode) {
+            EnvironmentItem item = build.placeItem(itemKey);
+            if(item!= null)
+                this.items.add(item);
+        } else {
+            player.useItem(itemKey);
         }
     }
 
