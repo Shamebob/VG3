@@ -34,7 +34,7 @@ Controller controller;
 PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, WINDOW, INDOOR_FLOOR, GRASS, PATH;
 PImage HERO_DOWN_IDLE, HERO_UP_IDLE, HERO_LEFT_IDLE, HERO_RIGHT_IDLE, HERO_PICKUP, HERO_USEITEM;
 PImage HAPPY, SAD;
-PImage KNIGHT_IDLE, KNIGHT_CREST;
+PImage KNIGHT_IDLE, KNIGHT_CREST, KNIGHT_BOSS_IDLE;
 PImage KEG, BEER, CHICKEN, CHICKEN_LEG;
 
 /**
@@ -43,6 +43,7 @@ PImage KEG, BEER, CHICKEN, CHICKEN_LEG;
 public void setup() {
   
   noCursor();
+  frameRate(60);
   OUTSIDE_WALL = loadImage("outside_wall.png");
   INSIDE_WALL = loadImage("inside_wall.png");
   DOOR = loadImage("door.png");
@@ -60,6 +61,7 @@ public void setup() {
   HAPPY = loadImage("happy.png");
   SAD = loadImage("sad.png");
   KNIGHT_IDLE = loadImage("knight_idle.png");
+  KNIGHT_BOSS_IDLE = loadImage("knight_boss_idle.png");
   KNIGHT_CREST = loadImage("knight_crest.png");
   CHICKEN = loadImage("whole_chicken.png");
   CHICKEN_LEG = loadImage("chicken_leg.png");
@@ -152,7 +154,7 @@ public class Animator {
 
     public void drawActiveGame(Controller controller) {
         this.drawTimedBackground(controller.time);
-        controller.inn.draw();
+        controller.inn.drawFloor();
         controller.player.draw();
 
         for(EnvironmentItem item : controller.items) {
@@ -166,7 +168,7 @@ public class Animator {
         for(Feeling feeling: controller.feelings) {
             feeling.draw();
         }
-
+        controller.inn.drawWalls();
         this.drawHUD(controller);
     }
 
@@ -174,7 +176,7 @@ public class Animator {
     public void endDay(Controller controller) {
         this.drawTimedBackground(controller.time);
         textSize(16);
-        controller.inn.draw();
+        controller.inn.drawFloor();
 
         fill(255, 255, 255);
         textSize(56);
@@ -185,6 +187,7 @@ public class Animator {
             item.draw();
         }
 
+        controller.inn.drawWalls();
         this.drawHUD(controller);
     }
 
@@ -197,6 +200,7 @@ public class Animator {
     }
 
     private void drawHUD(Controller controller) {
+        textSize(16);
         fill(101,67,33);
         rect(0, displayHeight - this.actionBarHeight, displayWidth, this.actionBarHeight);
         this.drawActionBar(controller);
@@ -305,6 +309,44 @@ public class Beer extends EnvironmentItem {
 
     }
 }
+public class Boss extends Customer {
+    ArrayList<Customer> entourage = new ArrayList<Customer>();
+    Faction faction;
+    PImage characterImage;
+
+    public Boss(float x, float y, int popularity, int goldAmount, Faction faction, ArrayList<Customer> entourage) {
+        super(x, y, ((Shape) new Rectangle2D.Float(x, y, 40, 50)), popularity, goldAmount);
+        this.faction = faction;
+
+        switch (faction) {
+            case KNIGHT:
+                this.characterImage = KNIGHT_BOSS_IDLE;
+                break;
+        }
+
+        this.entourage = entourage;
+    }
+
+    public void draw() {
+        super.draw();
+        this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), 40, 50));
+        image(this.characterImage, this.getX(), this.getY(), 40, 50);
+    }
+
+    @Override
+    protected void leave() {
+        if(faction == Faction.KNIGHT) {
+            controller.popularity.addKnightPopularity(this.evaluatePerformance());
+        }
+
+        for(Customer customer : entourage) {
+            customer.leave();
+        }
+        super.leave();
+    }
+
+
+}
 public abstract class Character extends GameObject {
 
     public Character (float x, float y, Shape shape) {
@@ -312,17 +354,37 @@ public abstract class Character extends GameObject {
     }
 
     public void move(PVector change) {
-        this.pos.add(change);
+        if(controller.checkMove(this.getPos(), change)) {
+            this.pos.add(change);
+        } else {
+            this.pos.add(change.mult(-1));
+        }
     }
 
     public void setShape(Shape shape) {
         this.shape = shape;
     }
+
+    protected PVector findDirection() {
+        float randomX = random(3, 5);
+        float randomY = random(3, 5);
+
+        if(round(random(0,1)) == 0) {
+            randomX *= -1;
+        }
+
+        if(round(random(0,1)) == 0) {
+            randomY *= -1;
+        }
+
+        return new PVector(randomX, randomY);
+    }
+
 }
 public class Chicken extends EnvironmentItem {
 
     public Chicken(float x, float y) {
-        super(x, y, ((Shape) new Ellipse2D.Float(x, y, 15, 15)), 10);
+        super(x, y, ((Shape) new Ellipse2D.Float(x, y, 15, 15)), 15);
     }
 
     public void draw() {
@@ -346,6 +408,7 @@ public class Cleaner {
     public void cleanGame() {
         cleanEnvironmentItems(controller.items);
         cleanFeelings(controller.feelings);
+        cleanCustomers(controller.customers);
     }
 
     private void cleanEnvironmentItems(ArrayList<EnvironmentItem> list) {
@@ -364,6 +427,17 @@ public class Cleaner {
         Feeling curObj;
         while(iter.hasNext()) {
             curObj = (Feeling) iter.next();
+            if(!curObj.isActive()) {
+                iter.remove();
+            }
+        }
+    }
+
+    private void cleanCustomers(ArrayList<Customer> list) {
+        Iterator iter = list.iterator();
+        Customer curObj;
+        while(iter.hasNext()) {
+            curObj = (Customer) iter.next();
             if(!curObj.isActive()) {
                 iter.remove();
             }
@@ -408,7 +482,7 @@ public class CollisionDetector {
 /* for resolving and updating the game state, drawing the game as well as monitoring if the game is over.
 */
 public class Controller {
-    boolean gameInPlay, endDay;
+    boolean gameInPlay, endDay, buildMove;
     Player player;
     Time time;
     Inn inn;
@@ -434,36 +508,66 @@ public class Controller {
     public void startDay() {
         if(this.endDay) {
             this.time.newDay();
+            this.calculateCustomers();
+
+            for(Customer customer: this.customers) {
+                customer.leave();
+            }
+
+            this.customers = new ArrayList<Customer>();
+            this.customers.add(spawner.spawnCustomer());
             this.endDay = false;
         }
     }
 
+    /**
+    * Calculates the customers that have to attend the inn that day, based on popularity of faction.
+    */
+    private void calculateCustomers() {
+        if(this.popularity.knightPopularityLevel == 1) {
+            this.spawner.setKnightSpawn(5);
+        } else {
+            this.spawner.setKnightSpawn(floor(this.popularity.knightPopularity/2));
+        }
+
+        this.time.setSpawnTimer(960/this.spawner.getCustomersInDay());
+    }
+
     public void start() {
-        this.endDay = false;
+        this.endDay = true;
         this.time = new Time();
         this.inn = new Inn();
+        this.calculateCustomers();
         this.spawner.setDoorPos(this.inn.getDoorPos());
         this.gameInPlay = true;
         this.player = spawner.spawnPlayer();
-        this.customers.add(spawner.spawnCustomer());
+        // this.spawnBoss();
         this.items.add(new Keg(displayWidth/2, displayHeight/2));
         this.items.add(new Chicken(displayWidth/2 + 100, displayHeight/2 + 100));
-        
+    }
+
+    public void spawnBoss() {
+        Boss boss = spawner.spawnKnightBoss();
+        for(Customer customer : boss.entourage) {
+            this.customers.add(customer);
+        }
+
+        this.customers.add(boss);
     }
 
     public void movePlayer(float x, float y, Facing direction) {
         PVector change = new PVector(x,y);
-        if(!checkPlayerCollisions(change)) {
+        if(checkMove(this.player.getPos(), change)) {
             this.player.move(change);
             this.player.setFacing(direction);
         }
     }
 
-    private boolean checkPlayerCollisions(PVector change) {
-        PVector nextPos = this.player.getPos().add(change);
+    public boolean checkMove(PVector currentPos, PVector change) {
+        PVector nextPos = currentPos.add(change);
         if(inn.wallCollision(nextPos.copy()))
-            return true;
-        return false;
+            return false;
+        return true;
     }
 
     public void drawGame() {
@@ -511,6 +615,10 @@ enum ItemType {
     BEER, CHICKENLEG;
 }
 
+enum Faction {
+    KNIGHT;
+}
+
 public abstract class Customer extends Character {
     int popularity;
     float satisfaction;
@@ -550,12 +658,23 @@ public abstract class Customer extends Character {
 
         if(this.entering)
             this.checkEntered();
+
+        if(this.moveCounter % 120 == 0 && !this.leaving && !this.entering) 
+            this.direction = super.findDirection();
+    
+        if(this.moveCounter % 5 == 0) {
+            this.move(this.direction);
+        }
+
+        if(this.leaving && this.getY() >= displayHeight) {
+            println("Bye bitch");
+            this.destroy();
+        }
+
+        this.moveCounter += 1;
     }
 
-    private PVector findDirection() {
-        return new PVector(random(-2, 2), random(-2, 2));
-    }
-
+   
     public void useItem(EnvironmentItem item) {
         boolean likedItem = false;
         ItemType itemType = null;
@@ -588,6 +707,7 @@ public abstract class Customer extends Character {
         } else {
             satisfaction = -25;
         }
+
         if(this.diminishingReturn > 0)
             satisfaction = satisfaction/this.diminishingReturn;
 
@@ -625,7 +745,7 @@ public abstract class Customer extends Character {
 
     protected void leave() {
         this.leaving = true;
-        this.direction = controller.inn.getDoorPos().sub(this.getPos()).normalize();
+        this.direction = controller.inn.getDoorPos().sub(this.getPos());
     }
 
     protected float evaluatePerformance() {
@@ -667,14 +787,15 @@ public class Feeling extends Character {
 
     public void draw() {
         this.drawCounter += 1;
-        if(this.drawCounter % 30 == 0) {
-            super.move(new PVector(0, -5));
+
+        if(this.drawCounter % 10 == 0) {
+            super.move(new PVector(0, -10));
         }
 
         
         image(this.drawing, this.getX(), this.getY(), 15, 15);
 
-        if(this.drawCounter == 145) {
+        if(this.drawCounter == 30) {
             this.destroy();
         }
     }
@@ -766,17 +887,24 @@ public abstract class GameObject {
 }
 public class Gold {
     private int amount;
+    private int accumulated;
 
     public Gold() {
         this.amount = 0;
+        this.accumulated = 0;
     }
 
     public void addGold(int quantity) {
         this.amount += quantity;
+        this.accumulated += quantity;
     }
 
     public int getAmount() {
         return this.amount;
+    }
+
+    public int getAccumulated() {
+        return this.accumulated;
     }
 
     public void buy(EnvironmentItem item) {
@@ -796,6 +924,7 @@ public class Inn {
     private float startX, startY, endX, endY;
     private ArrayList<Wall> walls = new ArrayList<Wall>();
     private ArrayList<Floor> floor = new ArrayList<Floor>();
+    Wall door;
     PVector doorPos;
 
     public Inn() {
@@ -816,8 +945,8 @@ public class Inn {
 
         for (int i = 0; i < wallCount; i++) {
             if(i == wallCount/2) {
-                this.walls.add(new Wall(curX, startY, wallWidth, wallHeight, WallType.DOOR));
                 this.doorPos = new PVector(curX, startY);
+                this.door = new Wall(curX, startY, wallWidth, wallHeight, WallType.DOOR);
             } else {
                 this.walls.add(new Wall(curX, startY, wallWidth, wallHeight, WallType.BOTTOM));
             }
@@ -833,8 +962,8 @@ public class Inn {
         wallCount = PApplet.parseInt((this.startY - this.endY)/wallHeight) + 1;
         println("Wall count: " + wallCount);
         for(int i = 0; i < wallCount; i++) {
-            this.walls.add(new Wall(this.startX, curY, wallWidth/5, wallHeight, WallType.SIDE));
-            this.walls.add(new Wall(curX, curY, wallWidth/5, wallHeight, WallType.SIDE));
+            this.walls.add(new Wall(this.startX, curY, wallWidth/4, wallHeight, WallType.SIDE));
+            this.walls.add(new Wall(curX, curY, wallWidth/4, wallHeight, WallType.SIDE));
             curY += wallHeight;
         }
         System.out.println("Number of walls: " + this.walls.size());
@@ -891,16 +1020,18 @@ public class Inn {
         
     }
 
-    public void draw() {
+    public void drawFloor() {
         for(Floor floor : this.floor) {
             floor.draw();
         }
 
+        this.door.draw();
+    }
+    public void drawWalls() {
         for(Wall wall : this.walls) {
             wall.draw();
         }
     }
-
     public float getStartX() {
         return this.startX;
     }
@@ -934,7 +1065,7 @@ public class Inn {
 public class Keg extends EnvironmentItem {
 
     public Keg(float x, float y) {
-        super(x, y, ((Shape) new Ellipse2D.Float(x, y, 15, 15)), 10);
+        super(x, y, ((Shape) new Ellipse2D.Float(x, y, 15, 15)), 30);
     }
 
     public void draw() {
@@ -943,20 +1074,11 @@ public class Keg extends EnvironmentItem {
 }
 public class Knight extends Customer {
     public Knight(float x, float y, int popularity, int goldAmount) {
-        super(x, y, ((Shape) new Rectangle2D.Float(x, y, 20, 20)), popularity, goldAmount);
+        super(x, y, ((Shape) new Rectangle2D.Float(x, y, 30, 40)), popularity, goldAmount);
     }
 
     public void draw() {
         super.draw();
-        
-        if(this.moveCounter % 120 == 0 && !this.leaving && !this.entering) 
-            this.direction = super.findDirection();
-
-        if(this.moveCounter % 15 == 0)
-            this.move(this.direction);
-
-        this.moveCounter += 1;
-
         this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), 30, 40));
         image(KNIGHT_IDLE, this.getX(), this.getY(), 30, 40);
         //TODO: Make sure they don't leave until they're done.
@@ -1025,26 +1147,34 @@ public class Player extends Staff {
     }
 }
 public class Popularity {
-    float knightPopularity;
-    int knightCounter;
-    int knightPopularityLevel;
+    float knightPopularity, knightLowerThreshold, knightUpperThreshold;
+    int knightCounter, knightPopularityLevel;
+    boolean seenKnightBoss;
+
 
     public Popularity() {
         this.knightPopularity = 0;
         this.knightPopularityLevel = 1;
         this.knightCounter = 0;
+        this.knightLowerThreshold = 0;
     }
 
     public void addKnightPopularity(float popularity) {
         this.knightCounter += 1;
-        this.knightPopularity = (this.knightPopularity + popularity)/knightCounter;
-        System.out.println("Popularity: "+ this.knightPopularity);
+        this.knightPopularity = (this.knightPopularity + popularity);
+        System.out.println("Knight Popularity: "+ this.knightPopularity);
         
         if(this.knightPopularity >= (this.knightPopularityLevel * 10)) {
+            this.knightLowerThreshold = this.knightPopularityLevel * 10;
             this.knightPopularityLevel += 1;
             this.knightPopularity = 0;
             this.knightCounter = 0;
         }
+        
+        if(this.knightPopularity <= this.knightLowerThreshold && this.knightPopularity > 0) {
+            this.knightPopularityLevel -= 1;
+            this.knightLowerThreshold = this.knightPopularityLevel * 10;
+        } 
     }
 
     public int[] getPopularityLevels() {
@@ -1062,16 +1192,26 @@ public class Popularity {
 */
 public class Spawner {
     PVector doorPos;
+    int knightSpawn, customersInDay;
     /**
     * Constructor for a spawner.
     */
     Spawner(){
+        this.knightSpawn = 0;
     }
 
     public void setDoorPos(PVector doorPos) {
         this.doorPos = doorPos;
     }
 
+    public void setKnightSpawn(int count) {
+        this.knightSpawn = count;
+        this.customersInDay += count;
+    }
+
+    public int getCustomersInDay() {
+        return this.customersInDay;
+    }
     /**
     * Spawn a player to the map. If it's the first wave then a new player is spawned, otherwise a the player's location is changed.
     */
@@ -1087,6 +1227,29 @@ public class Spawner {
         generateLikesAndDislikes(customer, controller.popularity.getKnightPopularityLevel());
         return customer;
     }
+    
+    private Customer spawnKnight(float x, float y) {
+        int goldAmount = 50;
+        int popularity = 50;
+        Customer customer;
+        customer = new Knight(x, y, popularity, goldAmount);
+        generateLikesAndDislikes(customer, controller.popularity.getKnightPopularityLevel());
+        return customer;
+    }
+
+    public Boss spawnKnightBoss() {
+        float x = this.doorPos.x;
+        float y = displayHeight - (displayHeight/10);
+        ArrayList<Customer> entourage = new ArrayList<Customer>();
+        PVector[] locations = new PVector[]{new PVector(x - 50, y - 50), new PVector(x-50, y+50), new PVector(x+50, y-50), new PVector(x+50, y+50)};
+
+        for(PVector location : locations) {
+            entourage.add(spawnKnight(x, y));
+        }
+        Boss boss = new Boss(this.doorPos.x + 10, displayHeight - (displayHeight/10), 500, 500, Faction.KNIGHT, entourage);
+        generateLikesAndDislikes(boss, controller.popularity.getKnightPopularityLevel());
+        return boss;
+    }
 
     private void generateLikesAndDislikes(Customer customer, int popularityLevel) {
         //TODO: Give likes and dislikes based on accumulated gold and not popularity.
@@ -1096,7 +1259,7 @@ public class Spawner {
         ItemType[] dislikedItems = new ItemType[itemNumber];
 
         for(int i = 0; i < itemNumber; i++) {
-            int index = floor(random(0, items.size()));
+            int index = floor(random(0, items.size() - 1));
             likedItems[i] = items.get(index);
             items.remove(index);
 
@@ -1188,9 +1351,9 @@ public class Time {
     public Time() {
         this.hour = 8;
         this.minute = 0;
-        this.day = 1;
+        this.day = 0;
         this.second = 0;
-        this.dayOver = false;
+        this.dayOver = true;
         this.spawnTimer = 120;
         this.spawnCounter = 0;
     }
@@ -1205,7 +1368,6 @@ public class Time {
         }
 
         if(this.spawnCounter % spawnTimer == 0) {
-            //TODO: Turn back on
             controller.newCustomer();
             this.spawnCounter = 0;
         }
@@ -1236,7 +1398,7 @@ public class Time {
     }
 
     public void draw() {
-        this.second += 5;
+        this.second += 15;
         if(this.second % 60 == 0 && !this.dayOver) {
             this.addMinute();
             this.second = 0;

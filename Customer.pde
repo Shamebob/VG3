@@ -2,6 +2,10 @@ enum ItemType {
     BEER, CHICKENLEG;
 }
 
+enum Faction {
+    KNIGHT;
+}
+
 public abstract class Customer extends Character {
     int popularity;
     float satisfaction;
@@ -41,12 +45,23 @@ public abstract class Customer extends Character {
 
         if(this.entering)
             this.checkEntered();
+
+        if(this.moveCounter % 120 == 0 && !this.leaving && !this.entering) 
+            this.direction = super.findDirection();
+    
+        if(this.moveCounter % 5 == 0) {
+            this.move(this.direction);
+        }
+
+        if(this.leaving && this.getY() >= displayHeight) {
+            println("Bye bitch");
+            this.destroy();
+        }
+
+        this.moveCounter += 1;
     }
 
-    private PVector findDirection() {
-        return new PVector(random(-2, 2), random(-2, 2));
-    }
-
+   
     public void useItem(EnvironmentItem item) {
         boolean likedItem = false;
         ItemType itemType = null;
@@ -79,6 +94,7 @@ public abstract class Customer extends Character {
         } else {
             satisfaction = -25;
         }
+
         if(this.diminishingReturn > 0)
             satisfaction = satisfaction/this.diminishingReturn;
 
@@ -116,7 +132,7 @@ public abstract class Customer extends Character {
 
     protected void leave() {
         this.leaving = true;
-        this.direction = controller.inn.getDoorPos().sub(this.getPos()).normalize();
+        this.direction = controller.inn.getDoorPos().sub(this.getPos());
     }
 
     protected float evaluatePerformance() {

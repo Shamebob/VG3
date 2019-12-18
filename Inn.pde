@@ -2,6 +2,7 @@ public class Inn {
     private float startX, startY, endX, endY;
     private ArrayList<Wall> walls = new ArrayList<Wall>();
     private ArrayList<Floor> floor = new ArrayList<Floor>();
+    Wall door;
     PVector doorPos;
 
     public Inn() {
@@ -22,8 +23,8 @@ public class Inn {
 
         for (int i = 0; i < wallCount; i++) {
             if(i == wallCount/2) {
-                this.walls.add(new Wall(curX, startY, wallWidth, wallHeight, WallType.DOOR));
                 this.doorPos = new PVector(curX, startY);
+                this.door = new Wall(curX, startY, wallWidth, wallHeight, WallType.DOOR);
             } else {
                 this.walls.add(new Wall(curX, startY, wallWidth, wallHeight, WallType.BOTTOM));
             }
@@ -39,8 +40,8 @@ public class Inn {
         wallCount = int((this.startY - this.endY)/wallHeight) + 1;
         println("Wall count: " + wallCount);
         for(int i = 0; i < wallCount; i++) {
-            this.walls.add(new Wall(this.startX, curY, wallWidth/5, wallHeight, WallType.SIDE));
-            this.walls.add(new Wall(curX, curY, wallWidth/5, wallHeight, WallType.SIDE));
+            this.walls.add(new Wall(this.startX, curY, wallWidth/4, wallHeight, WallType.SIDE));
+            this.walls.add(new Wall(curX, curY, wallWidth/4, wallHeight, WallType.SIDE));
             curY += wallHeight;
         }
         System.out.println("Number of walls: " + this.walls.size());
@@ -97,16 +98,18 @@ public class Inn {
         
     }
 
-    void draw() {
+    public void drawFloor() {
         for(Floor floor : this.floor) {
             floor.draw();
         }
 
+        this.door.draw();
+    }
+    public void drawWalls() {
         for(Wall wall : this.walls) {
             wall.draw();
         }
     }
-
     public float getStartX() {
         return this.startX;
     }

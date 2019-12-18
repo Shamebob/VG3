@@ -1,16 +1,23 @@
 public class Gold {
     private int amount;
+    private int accumulated;
 
     public Gold() {
         this.amount = 0;
+        this.accumulated = 0;
     }
 
     public void addGold(int quantity) {
         this.amount += quantity;
+        this.accumulated += quantity;
     }
 
     public int getAmount() {
         return this.amount;
+    }
+
+    public int getAccumulated() {
+        return this.accumulated;
     }
 
     public void buy(EnvironmentItem item) {

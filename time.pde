@@ -6,9 +6,9 @@ public class Time {
     public Time() {
         this.hour = 8;
         this.minute = 0;
-        this.day = 1;
+        this.day = 0;
         this.second = 0;
-        this.dayOver = false;
+        this.dayOver = true;
         this.spawnTimer = 120;
         this.spawnCounter = 0;
     }
@@ -23,7 +23,6 @@ public class Time {
         }
 
         if(this.spawnCounter % spawnTimer == 0) {
-            //TODO: Turn back on
             controller.newCustomer();
             this.spawnCounter = 0;
         }
@@ -54,7 +53,7 @@ public class Time {
     }
 
     public void draw() {
-        this.second += 5;
+        this.second += 15;
         if(this.second % 60 == 0 && !this.dayOver) {
             this.addMinute();
             this.second = 0;

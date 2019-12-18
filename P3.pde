@@ -7,7 +7,7 @@ Controller controller;
 PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, WINDOW, INDOOR_FLOOR, GRASS, PATH;
 PImage HERO_DOWN_IDLE, HERO_UP_IDLE, HERO_LEFT_IDLE, HERO_RIGHT_IDLE, HERO_PICKUP, HERO_USEITEM;
 PImage HAPPY, SAD;
-PImage KNIGHT_IDLE, KNIGHT_CREST;
+PImage KNIGHT_IDLE, KNIGHT_CREST, KNIGHT_BOSS_IDLE;
 PImage KEG, BEER, CHICKEN, CHICKEN_LEG;
 
 /**
@@ -16,6 +16,7 @@ PImage KEG, BEER, CHICKEN, CHICKEN_LEG;
 void setup() {
   fullScreen();
   noCursor();
+  frameRate(60);
   OUTSIDE_WALL = loadImage("outside_wall.png");
   INSIDE_WALL = loadImage("inside_wall.png");
   DOOR = loadImage("door.png");
@@ -33,6 +34,7 @@ void setup() {
   HAPPY = loadImage("happy.png");
   SAD = loadImage("sad.png");
   KNIGHT_IDLE = loadImage("knight_idle.png");
+  KNIGHT_BOSS_IDLE = loadImage("knight_boss_idle.png");
   KNIGHT_CREST = loadImage("knight_crest.png");
   CHICKEN = loadImage("whole_chicken.png");
   CHICKEN_LEG = loadImage("chicken_leg.png");

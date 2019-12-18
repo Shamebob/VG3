@@ -3,7 +3,7 @@
 /* for resolving and updating the game state, drawing the game as well as monitoring if the game is over.
 */
 public class Controller {
-    boolean gameInPlay, endDay;
+    boolean gameInPlay, endDay, buildMove;
     Player player;
     Time time;
     Inn inn;
@@ -29,36 +29,66 @@ public class Controller {
     public void startDay() {
         if(this.endDay) {
             this.time.newDay();
+            this.calculateCustomers();
+
+            for(Customer customer: this.customers) {
+                customer.leave();
+            }
+
+            this.customers = new ArrayList<Customer>();
+            this.customers.add(spawner.spawnCustomer());
             this.endDay = false;
         }
     }
 
+    /**
+    * Calculates the customers that have to attend the inn that day, based on popularity of faction.
+    */
+    private void calculateCustomers() {
+        if(this.popularity.knightPopularityLevel == 1) {
+            this.spawner.setKnightSpawn(5);
+        } else {
+            this.spawner.setKnightSpawn(floor(this.popularity.knightPopularity/2));
+        }
+
+        this.time.setSpawnTimer(960/this.spawner.getCustomersInDay());
+    }
+
     public void start() {
-        this.endDay = false;
+        this.endDay = true;
         this.time = new Time();
         this.inn = new Inn();
+        this.calculateCustomers();
         this.spawner.setDoorPos(this.inn.getDoorPos());
         this.gameInPlay = true;
         this.player = spawner.spawnPlayer();
-        this.customers.add(spawner.spawnCustomer());
+        // this.spawnBoss();
         this.items.add(new Keg(displayWidth/2, displayHeight/2));
         this.items.add(new Chicken(displayWidth/2 + 100, displayHeight/2 + 100));
-        
+    }
+
+    public void spawnBoss() {
+        Boss boss = spawner.spawnKnightBoss();
+        for(Customer customer : boss.entourage) {
+            this.customers.add(customer);
+        }
+
+        this.customers.add(boss);
     }
 
     public void movePlayer(float x, float y, Facing direction) {
         PVector change = new PVector(x,y);
-        if(!checkPlayerCollisions(change)) {
+        if(checkMove(this.player.getPos(), change)) {
             this.player.move(change);
             this.player.setFacing(direction);
         }
     }
 
-    private boolean checkPlayerCollisions(PVector change) {
-        PVector nextPos = this.player.getPos().add(change);
+    public boolean checkMove(PVector currentPos, PVector change) {
+        PVector nextPos = currentPos.add(change);
         if(inn.wallCollision(nextPos.copy()))
-            return true;
-        return false;
+            return false;
+        return true;
     }
 
     public void drawGame() {

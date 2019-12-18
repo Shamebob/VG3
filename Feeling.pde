@@ -19,14 +19,15 @@ public class Feeling extends Character {
 
     public void draw() {
         this.drawCounter += 1;
-        if(this.drawCounter % 30 == 0) {
-            super.move(new PVector(0, -5));
+
+        if(this.drawCounter % 10 == 0) {
+            super.move(new PVector(0, -10));
         }
 
         
         image(this.drawing, this.getX(), this.getY(), 15, 15);
 
-        if(this.drawCounter == 145) {
+        if(this.drawCounter == 30) {
             this.destroy();
         }
     }
