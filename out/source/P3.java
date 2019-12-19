@@ -38,7 +38,10 @@ PImage HERO_DOWN_IDLE, HERO_UP_IDLE, HERO_LEFT_IDLE, HERO_RIGHT_IDLE, HERO_PICKU
 PImage SERVER_DOWN_IDLE, SERVER_UP_IDLE, SERVER_LEFT_IDLE, SERVER_RIGHT_IDLE, SERVER_PICKUP, SERVER_USEITEM;
 PImage HAPPY, SAD;
 PImage KNIGHT_IDLE, KNIGHT_CREST, KNIGHT_BOSS_IDLE;
-PImage KEG, BEER, CHICKEN, CHICKEN_LEG;
+PImage WIZARD_IDLE, WIZARD_CREST, WIZARD_BOSS_IDLE;
+PImage ELF_IDLE, ELF_CREST, ELF_BOSS_IDLE;
+PImage ZOMBIE_IDLE, ZOMBIE_CREST, ZOMBIE_BOSS_IDLE;
+PImage KEG, BEER, CHICKEN, CHICKEN_LEG, CHALICE, CHALICE_TABLE, CHEESE, CHEESE_BARREL;
 // SoundFile music;
 
 /**
@@ -54,8 +57,21 @@ public void setup() {
 
   OUTSIDE_WALL = loadImage("outside_wall.png");
   INSIDE_WALL = loadImage("inside_wall.png");
+  WINDOW = loadImage("window.png");
   DOOR = loadImage("door.png");
+  INDOOR_FLOOR = loadImage("indoor_floor.png");
+  GRASS = loadImage("grass.png");
+  PATH = loadImage("path.png");
+
+  BEER = loadImage("beer.png");
   KEG = loadImage("keg.png");
+  CHICKEN = loadImage("whole_chicken.png");
+  CHICKEN_LEG = loadImage("chicken_leg.png");
+  CHALICE = loadImage("chalice.png");
+  CHALICE_TABLE = loadImage("chalice_table.png");
+  CHEESE = loadImage("cheese.png");
+  CHEESE_BARREL = loadImage("cheese_barrel.png");
+
   HERO_DOWN_IDLE = loadImage("player_idle.png");
   HERO_RIGHT_IDLE = loadImage("player_right1.png");
   HERO_LEFT_IDLE = loadImage("player_left1.png");
@@ -70,19 +86,25 @@ public void setup() {
   SERVER_PICKUP = loadImage("server_pickup.png");
   SERVER_USEITEM = loadImage("server_useitem.png");
 
-
-  WINDOW = loadImage("window.png");
-  BEER = loadImage("beer.png");
   HAPPY = loadImage("happy.png");
   SAD = loadImage("sad.png");
+
   KNIGHT_IDLE = loadImage("knight_idle.png");
   KNIGHT_BOSS_IDLE = loadImage("knight_boss_idle.png");
   KNIGHT_CREST = loadImage("knight_crest.png");
-  CHICKEN = loadImage("whole_chicken.png");
-  CHICKEN_LEG = loadImage("chicken_leg.png");
-  INDOOR_FLOOR = loadImage("indoor_floor.png");
-  GRASS = loadImage("grass.png");
-  PATH = loadImage("path.png");
+
+  WIZARD_IDLE = loadImage("wizard_idle.png");
+  WIZARD_BOSS_IDLE = loadImage("wizard_boss_idle.png");
+  WIZARD_CREST = loadImage("wizard_crest.png");
+
+  ELF_IDLE = loadImage("elf_idle.png");
+  ELF_BOSS_IDLE = loadImage("elf_boss_idle.png");
+  ELF_CREST = loadImage("elf_crest.png");
+
+  ZOMBIE_IDLE = loadImage("zombie_idle.png");
+  ZOMBIE_BOSS_IDLE = loadImage("zombie_boss_idle.png");
+  ZOMBIE_CREST = loadImage("zombie_crest.png");
+
 
 
   controller = new Controller();
@@ -150,7 +172,7 @@ public void keyPressed() {
 public class Animator {
     float actionBarStartX, actionBarHeight, infoStartX, infoWidth, customerEmotionsWidth, customerEmotionsStartX;
     ItemType[] newCustomerLikes, newCustomerDislikes;
-    PImage[] crests = new PImage[]{KNIGHT_CREST};
+    PImage[] crests = new PImage[]{KNIGHT_CREST, WIZARD_CREST, ELF_CREST, ZOMBIE_CREST};
 
     public Animator() {
         this.actionBarStartX = displayWidth/4;
@@ -278,7 +300,7 @@ public class Animator {
 
     public void setupBuildItems() {
         float actionBoxWidth = (displayWidth/2)/5;
-        PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/3));
+        PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/2));
         PVector factorChange = new PVector(actionBoxWidth, 0);
         for(EnvironmentItem item : controller.build.purchaseItems) {
             item.setPos(currentPos.copy());
@@ -287,7 +309,7 @@ public class Animator {
     }
 
     private void drawInventoryItems(float actionBoxWidth) {
-        PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/3));
+        PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/2));
         PVector factorChange = new PVector(actionBoxWidth, 0);
         for(EnvironmentItem item : controller.player.inventory) {
             item.setPos(currentPos.copy());
@@ -316,20 +338,22 @@ public class Animator {
         image(HAPPY, this.customerEmotionsStartX + (this.customerEmotionsWidth/4) - 10, displayHeight - (actionBarHeight - (this.actionBarHeight/10)), 20, 20);
         image(SAD, this.customerEmotionsStartX + (3 * (this.customerEmotionsWidth/4)) - 10, displayHeight - (actionBarHeight - (this.actionBarHeight/10)), 20, 20);
 
-        float imageSpace = this.customerEmotionsWidth/6;
+        float imageSpace = this.customerEmotionsWidth/4;
         float imageY = displayHeight - (this.actionBarHeight/2);
-        float imageHeight = this.actionBarHeight/4;
+        float imageHeight = this.actionBarHeight/3;
         float currentPoint = this.customerEmotionsStartX + (imageSpace/4);
         float imageWidth = imageSpace/2;
 
         for(ItemType item : this.newCustomerLikes) {
             drawItemType(item, currentPoint, imageY, imageWidth, imageHeight);
+            currentPoint += imageSpace;
         }
 
         currentPoint = this.customerEmotionsStartX + (this.customerEmotionsWidth/2) + (imageSpace/4);
 
         for(ItemType item : this.newCustomerDislikes) {
             drawItemType(item, currentPoint, imageY, imageWidth, imageHeight);
+            currentPoint += imageSpace;
         }
 
     }
@@ -337,11 +361,24 @@ public class Animator {
     public void drawItemType(ItemType item, float x, float y, float width, float height) {
         PImage itemImage = null;
 
-        if(item == ItemType.BEER) {
-            itemImage = BEER;
-        } else if(item == ItemType.CHICKENLEG) {
-            itemImage = CHICKEN_LEG;
+        switch (item) {
+            case BEER:
+                itemImage = BEER;
+                break;
+            
+            case CHICKENLEG:
+                itemImage = CHICKEN_LEG;
+                break;
+
+            case CHALICE:
+                itemImage = CHALICE;
+                break;
+
+            case CHEESE:
+                itemImage = CHEESE;
+                break;
         }
+    
 
         if(itemImage != null)
             image(itemImage, x, y, width, height);
@@ -361,15 +398,34 @@ public class Boss extends Customer {
     ArrayList<Customer> entourage = new ArrayList<Customer>();
     Faction faction;
     PImage characterImage;
+    float height, width;
 
     public Boss(float x, float y, int popularity, int goldAmount, Faction faction, ArrayList<Customer> entourage) {
         super(x, y, ((Shape) new Rectangle2D.Float(x, y, 40, 50)), popularity, goldAmount);
+        this.width = 40;
+        this.height = 50;
         this.faction = faction;
         this.satisfaction = -50;
 
         switch (faction) {
             case KNIGHT:
                 this.characterImage = KNIGHT_BOSS_IDLE;
+                break;
+            
+            case ELF:
+                this.width = 30;
+                this.height = 40;
+                this.characterImage = ELF_BOSS_IDLE;
+                break;
+
+            case WIZARD:
+                this.width = 30;
+                this.height = 40;
+                this.characterImage = WIZARD_BOSS_IDLE;
+                break;
+            
+            case ZOMBIE:
+                this.characterImage = ZOMBIE_BOSS_IDLE;
                 break;
         }
 
@@ -378,8 +434,8 @@ public class Boss extends Customer {
 
     public void draw() {
         super.draw();
-        this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), 40, 50));
-        image(this.characterImage, this.getX(), this.getY(), 40, 50);
+        this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), this.width, this.height));
+        image(this.characterImage, this.getX(), this.getY(), this.width, this.height);
     }
 
     @Override
@@ -407,7 +463,7 @@ public class Boss extends Customer {
 
 }
 public class Build {
-    EnvironmentItem[] purchaseItems = new EnvironmentItem[]{new Keg(0, 0), new Chicken(0, 0)};
+    EnvironmentItem[] purchaseItems = new EnvironmentItem[]{new Keg(0, 0), new Chicken(0, 0), new ChaliceTable(0, 0), new CheeseBarrel(0, 0)};
     PVector buildSquarePos;
     Shape shape;
     float buildSquareWidth, buildSquareHeight;
@@ -465,6 +521,16 @@ public class Build {
                 item = new Chicken(x,y);
                 cost = 25;
                 break;
+            
+            case 3:
+                item = new ChaliceTable(x,y);
+                cost = 40;
+                break;
+            
+            case 4:
+                item = new CheeseBarrel(x,y);
+                cost = 70;
+                break;
         }
 
         if(controller.gold.buyItem(cost)) {
@@ -474,6 +540,26 @@ public class Build {
         }
     }
 
+}
+public class Chalice extends EnvironmentItem {
+    public Chalice(float x, float y) {
+        super(x, y, ((Shape) new Rectangle2D.Float(x, y, 25, 25)), 1);
+    }
+
+    public void draw() {
+        image(CHALICE, this.getX(), this.getY(), 25, 25);
+
+    }
+}
+public class ChaliceTable extends EnvironmentItem {
+
+    public ChaliceTable(float x, float y) {
+        super(x, y, ((Shape) new Ellipse2D.Float(x, y, 15, 15)), 30);
+    }
+
+    public void draw() {
+        image(CHALICE_TABLE, this.getX(), this.getY(), 30, 30);
+    }
 }
 public abstract class Character extends GameObject {
     PVector direction;
@@ -517,6 +603,26 @@ public abstract class Character extends GameObject {
         return(this.getPos().add(this.getDirection()));
     }
 
+}
+public class Cheese extends EnvironmentItem {
+    public Cheese(float x, float y) {
+        super(x, y, ((Shape) new Rectangle2D.Float(x, y, 25, 25)), 1);
+    }
+
+    public void draw() {
+        image(CHEESE, this.getX(), this.getY(), 25, 25);
+
+    }
+}
+public class CheeseBarrel extends EnvironmentItem {
+
+    public CheeseBarrel(float x, float y) {
+        super(x, y, ((Shape) new Ellipse2D.Float(x, y, 15, 15)), 30);
+    }
+
+    public void draw() {
+        image(CHEESE_BARREL, this.getX(), this.getY(), 30, 30);
+    }
 }
 public class Chicken extends EnvironmentItem {
 
@@ -652,8 +758,9 @@ public class Controller {
         // this.customers.add(new)
         this.gameInPlay = true;
         this.player = spawner.spawnPlayer();
+        this.spawnBoss(Faction.ZOMBIE);
         this.workers.add(spawner.spawnWorker(ItemType.BEER));
-        this.workers.add(spawner.spawnWorker(ItemType.CHICKENLEG));
+        // this.workers.add(spawner.spawnWorker(ItemType.CHICKENLEG));
     }
 
     public void addInnGold(int amount) {
@@ -795,11 +902,11 @@ public class Controller {
     }
 }
 enum ItemType {
-    BEER, CHICKENLEG;
+    BEER, CHICKENLEG, CHALICE, CHEESE;
 }
 
 enum Faction {
-    KNIGHT;
+    KNIGHT, WIZARD, ELF, ZOMBIE;
 }
 
 public abstract class Customer extends Character {
@@ -826,12 +933,6 @@ public abstract class Customer extends Character {
         this.waitCounter = 0;
         this.enter();
     }
-
-//    public Customer(float x, float y, Shape shape, int popularity, int goldAmount, int satisfaction) {
-//        this.Customer(x, y, shape, popularity, goldAmount, satisfaction);
-//        this.satisfaction = satisfaction;
-//    }
-
 
     public void setLikes(ItemType[] likes) {
         this.likes = likes;
@@ -895,11 +996,17 @@ public abstract class Customer extends Character {
         ItemType itemType = null;
         if(this.leaving)
             return;
+
+        
         
         if(item instanceof Beer) {
             itemType = ItemType.BEER;
         } else if(item instanceof ChickenLeg) {
             itemType = ItemType.CHICKENLEG;
+        } else if(item instanceof Chalice) {
+            itemType = ItemType.CHALICE;
+        } else if(item instanceof Cheese) {
+            itemType = ItemType.CHEESE;
         }
 
         this.money.buy(item);
@@ -953,7 +1060,7 @@ public abstract class Customer extends Character {
     }
 
     protected void checkEntered() {
-        if(this.getY() <= (controller.inn.getDoorPos().y - 10))
+        if(this.getY() <= (controller.inn.getDoorPos().y - 20))
             this.entering = false;
     }
 
@@ -983,6 +1090,23 @@ public abstract class Customer extends Character {
         this.satisfaction = satisfaction;
         controller.popularity.addPopularity(faction, this.evaluatePerformance());
         this.leave();
+    }
+}
+public class Elf extends Customer {
+    public Elf(float x, float y, int popularity, int goldAmount) {
+        super(x, y, ((Shape) new Rectangle2D.Float(x, y, 30, 50)), popularity, goldAmount);
+    }
+
+    public void draw() {
+        super.draw();
+        this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), 30, 50));
+        image(ELF_IDLE, this.getX(), this.getY(), 30, 50);
+    }
+
+    @Override
+    protected void leave() {
+        controller.popularity.addPopularity(Faction.ELF, this.evaluatePerformance());
+        super.leave();
     }
 }
 public abstract class EnvironmentItem extends GameObject {
@@ -1334,7 +1458,6 @@ public class Knight extends Customer {
 
     @Override
     protected void leave() {
-        System.out.println("Called:");
         controller.popularity.addPopularity(Faction.KNIGHT, this.evaluatePerformance());
         super.leave();
     }
@@ -1431,6 +1554,12 @@ public class Popularity {
         switch (faction) {
                 case KNIGHT:
                     return 0;
+                case WIZARD:
+                    return 1;
+                case ELF:
+                    return 2;
+                case ZOMBIE:
+                    return 3;
         }
 
         return 0;
@@ -1518,6 +1647,18 @@ public class Spawner {
             case KNIGHT:
                 customer = new Knight(x, y, popularity, goldAmount);
                 break;
+
+            case ELF:
+                customer = new Elf(x, y, popularity, goldAmount);
+                break;
+
+            case WIZARD:
+                customer = new Wizard(x, y, popularity, goldAmount);
+                break;
+            
+            case ZOMBIE:
+                customer = new Zombie(x, y, popularity, goldAmount);
+                break;
         }
 
         generateLikesAndDislikes(customer, controller.popularity.getPopularityLevel(faction));
@@ -1540,7 +1681,7 @@ public class Spawner {
         //TODO: Give likes and dislikes based on accumulated gold and not popularity.
         ArrayList<ItemType> items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
         //TODO: Allow this int itemNumber = popularityLevel;
-        int itemNumber = items.size() - 1;
+        int itemNumber = floor(items.size()/2);
 
         ItemType[] likedItems = new ItemType[itemNumber];
         ItemType[] dislikedItems = new ItemType[itemNumber];
@@ -1615,13 +1756,21 @@ public abstract class Staff extends Character {
         
         if(item instanceof Keg) {
             inventory.add(new Beer(0,0));
-            item.use();
         }
 
         if(item instanceof Chicken) {
             inventory.add(new ChickenLeg(0,0));
-            item.use();
         }
+
+        if(item instanceof ChaliceTable) {
+            inventory.add(new Chalice(0,0));
+        }
+
+        if(item instanceof CheeseBarrel) {
+            inventory.add(new Cheese(0,0));
+        }
+
+        item.use();
     }
 
     public void useItem(int index) {
@@ -1629,6 +1778,69 @@ public abstract class Staff extends Character {
             EnvironmentItem item = this.inventory.get(index - 1);
             controller.useItem(item, this.findZone());
             this.inventory.remove(index - 1);
+        }
+    }
+}
+public class Time {
+    int day, hour, minute, second;
+    boolean dayOver;
+    int spawnTimer, spawnCounter;
+
+    public Time() {
+        this.hour = 8;
+        this.minute = 0;
+        this.day = 0;
+        this.second = 0;
+        this.dayOver = true;
+        this.spawnTimer = 120;
+        this.spawnCounter = 0;
+    }
+
+    public void addMinute() {
+        this.minute += 1;
+        this.spawnCounter += 1;
+
+        if(this.minute % 60 == 0) {
+            this.addHour();
+            this.minute = 0;
+        }
+
+        if(this.spawnCounter % spawnTimer == 0) {
+            controller.newCustomer();
+            this.spawnCounter = 0;
+        }
+    }
+
+    public void setSpawnTimer(int spawnTimer) {
+        this.spawnTimer = spawnTimer;
+    }
+
+    private void addHour() {
+        this.hour += 1;
+
+        if(this.hour % 24 == 0) {
+            this.hour = 0;
+        }
+
+        if(this.hour == 0) {
+            this.dayOver = true;
+            controller.endDay = true;
+            controller.buildMode = true;
+        }
+    }
+
+    public void newDay() {
+        this.day += 1;
+        this.hour = 8;
+        this.minute = 0;
+        this.dayOver = false;
+    }
+
+    public void draw() {
+        this.second += 15;
+        if(this.second % 60 == 0 && !this.dayOver) {
+            this.addMinute();
+            this.second = 0;
         }
     }
 }
@@ -1661,6 +1873,23 @@ public class Wall extends GameObject{
             fill(128, 128, 128);
             rect(this.getX(), this.getY(), this.width, this.height);
         }
+    }
+}
+public class Wizard extends Customer {
+    public Wizard(float x, float y, int popularity, int goldAmount) {
+        super(x, y, ((Shape) new Rectangle2D.Float(x, y, 30, 40)), popularity, goldAmount);
+    }
+
+    public void draw() {
+        super.draw();
+        this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), 30, 40));
+        image(WIZARD_IDLE, this.getX(), this.getY(), 30, 40);
+    }
+
+    @Override
+    protected void leave() {
+        controller.popularity.addPopularity(Faction.WIZARD, this.evaluatePerformance());
+        super.leave();
     }
 }
 public class Worker extends Staff {
@@ -1895,67 +2124,21 @@ public class Worker extends Staff {
     }
 
 }
-public class Time {
-    int day, hour, minute, second;
-    boolean dayOver;
-    int spawnTimer, spawnCounter;
-
-    public Time() {
-        this.hour = 8;
-        this.minute = 0;
-        this.day = 0;
-        this.second = 0;
-        this.dayOver = true;
-        this.spawnTimer = 120;
-        this.spawnCounter = 0;
-    }
-
-    public void addMinute() {
-        this.minute += 1;
-        this.spawnCounter += 1;
-
-        if(this.minute % 60 == 0) {
-            this.addHour();
-            this.minute = 0;
-        }
-
-        if(this.spawnCounter % spawnTimer == 0) {
-            controller.newCustomer();
-            this.spawnCounter = 0;
-        }
-    }
-
-    public void setSpawnTimer(int spawnTimer) {
-        this.spawnTimer = spawnTimer;
-    }
-
-    private void addHour() {
-        this.hour += 1;
-
-        if(this.hour % 24 == 0) {
-            this.hour = 0;
-        }
-
-        if(this.hour == 0) {
-            this.dayOver = true;
-            controller.endDay = true;
-            controller.buildMode = true;
-        }
-    }
-
-    public void newDay() {
-        this.day += 1;
-        this.hour = 8;
-        this.minute = 0;
-        this.dayOver = false;
+public class Zombie extends Customer {
+    public Zombie(float x, float y, int popularity, int goldAmount) {
+        super(x, y, ((Shape) new Rectangle2D.Float(x, y, 30, 40)), popularity, goldAmount);
     }
 
     public void draw() {
-        this.second += 15;
-        if(this.second % 60 == 0 && !this.dayOver) {
-            this.addMinute();
-            this.second = 0;
-        }
+        super.draw();
+        this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), 30, 40));
+        image(ZOMBIE_IDLE, this.getX(), this.getY(), 30, 40);
+    }
+
+    @Override
+    protected void leave() {
+        controller.popularity.addPopularity(Faction.ZOMBIE, this.evaluatePerformance());
+        super.leave();
     }
 }
   public void settings() {  fullScreen(); }

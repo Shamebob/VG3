@@ -11,7 +11,6 @@ public class Knight extends Customer {
 
     @Override
     protected void leave() {
-        System.out.println("Called:");
         controller.popularity.addPopularity(Faction.KNIGHT, this.evaluatePerformance());
         super.leave();
     }

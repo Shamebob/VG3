@@ -59,6 +59,18 @@ public class Spawner {
             case KNIGHT:
                 customer = new Knight(x, y, popularity, goldAmount);
                 break;
+
+            case ELF:
+                customer = new Elf(x, y, popularity, goldAmount);
+                break;
+
+            case WIZARD:
+                customer = new Wizard(x, y, popularity, goldAmount);
+                break;
+            
+            case ZOMBIE:
+                customer = new Zombie(x, y, popularity, goldAmount);
+                break;
         }
 
         generateLikesAndDislikes(customer, controller.popularity.getPopularityLevel(faction));
@@ -81,7 +93,7 @@ public class Spawner {
         //TODO: Give likes and dislikes based on accumulated gold and not popularity.
         ArrayList<ItemType> items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
         //TODO: Allow this int itemNumber = popularityLevel;
-        int itemNumber = items.size() - 1;
+        int itemNumber = floor(items.size()/2);
 
         ItemType[] likedItems = new ItemType[itemNumber];
         ItemType[] dislikedItems = new ItemType[itemNumber];

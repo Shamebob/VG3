@@ -1,5 +1,5 @@
 public class Build {
-    EnvironmentItem[] purchaseItems = new EnvironmentItem[]{new Keg(0, 0), new Chicken(0, 0)};
+    EnvironmentItem[] purchaseItems = new EnvironmentItem[]{new Keg(0, 0), new Chicken(0, 0), new ChaliceTable(0, 0), new CheeseBarrel(0, 0)};
     PVector buildSquarePos;
     Shape shape;
     float buildSquareWidth, buildSquareHeight;
@@ -56,6 +56,16 @@ public class Build {
             case 2:
                 item = new Chicken(x,y);
                 cost = 25;
+                break;
+            
+            case 3:
+                item = new ChaliceTable(x,y);
+                cost = 40;
+                break;
+            
+            case 4:
+                item = new CheeseBarrel(x,y);
+                cost = 70;
                 break;
         }
 

@@ -10,7 +10,10 @@ PImage HERO_DOWN_IDLE, HERO_UP_IDLE, HERO_LEFT_IDLE, HERO_RIGHT_IDLE, HERO_PICKU
 PImage SERVER_DOWN_IDLE, SERVER_UP_IDLE, SERVER_LEFT_IDLE, SERVER_RIGHT_IDLE, SERVER_PICKUP, SERVER_USEITEM;
 PImage HAPPY, SAD;
 PImage KNIGHT_IDLE, KNIGHT_CREST, KNIGHT_BOSS_IDLE;
-PImage KEG, BEER, CHICKEN, CHICKEN_LEG;
+PImage WIZARD_IDLE, WIZARD_CREST, WIZARD_BOSS_IDLE;
+PImage ELF_IDLE, ELF_CREST, ELF_BOSS_IDLE;
+PImage ZOMBIE_IDLE, ZOMBIE_CREST, ZOMBIE_BOSS_IDLE;
+PImage KEG, BEER, CHICKEN, CHICKEN_LEG, CHALICE, CHALICE_TABLE, CHEESE, CHEESE_BARREL;
 // SoundFile music;
 
 /**
@@ -26,8 +29,21 @@ void setup() {
 
   OUTSIDE_WALL = loadImage("outside_wall.png");
   INSIDE_WALL = loadImage("inside_wall.png");
+  WINDOW = loadImage("window.png");
   DOOR = loadImage("door.png");
+  INDOOR_FLOOR = loadImage("indoor_floor.png");
+  GRASS = loadImage("grass.png");
+  PATH = loadImage("path.png");
+
+  BEER = loadImage("beer.png");
   KEG = loadImage("keg.png");
+  CHICKEN = loadImage("whole_chicken.png");
+  CHICKEN_LEG = loadImage("chicken_leg.png");
+  CHALICE = loadImage("chalice.png");
+  CHALICE_TABLE = loadImage("chalice_table.png");
+  CHEESE = loadImage("cheese.png");
+  CHEESE_BARREL = loadImage("cheese_barrel.png");
+
   HERO_DOWN_IDLE = loadImage("player_idle.png");
   HERO_RIGHT_IDLE = loadImage("player_right1.png");
   HERO_LEFT_IDLE = loadImage("player_left1.png");
@@ -42,19 +58,25 @@ void setup() {
   SERVER_PICKUP = loadImage("server_pickup.png");
   SERVER_USEITEM = loadImage("server_useitem.png");
 
-
-  WINDOW = loadImage("window.png");
-  BEER = loadImage("beer.png");
   HAPPY = loadImage("happy.png");
   SAD = loadImage("sad.png");
+
   KNIGHT_IDLE = loadImage("knight_idle.png");
   KNIGHT_BOSS_IDLE = loadImage("knight_boss_idle.png");
   KNIGHT_CREST = loadImage("knight_crest.png");
-  CHICKEN = loadImage("whole_chicken.png");
-  CHICKEN_LEG = loadImage("chicken_leg.png");
-  INDOOR_FLOOR = loadImage("indoor_floor.png");
-  GRASS = loadImage("grass.png");
-  PATH = loadImage("path.png");
+
+  WIZARD_IDLE = loadImage("wizard_idle.png");
+  WIZARD_BOSS_IDLE = loadImage("wizard_boss_idle.png");
+  WIZARD_CREST = loadImage("wizard_crest.png");
+
+  ELF_IDLE = loadImage("elf_idle.png");
+  ELF_BOSS_IDLE = loadImage("elf_boss_idle.png");
+  ELF_CREST = loadImage("elf_crest.png");
+
+  ZOMBIE_IDLE = loadImage("zombie_idle.png");
+  ZOMBIE_BOSS_IDLE = loadImage("zombie_boss_idle.png");
+  ZOMBIE_CREST = loadImage("zombie_crest.png");
+
 
 
   controller = new Controller();

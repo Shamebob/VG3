@@ -1,9 +1,9 @@
 enum ItemType {
-    BEER, CHICKENLEG;
+    BEER, CHICKENLEG, CHALICE, CHEESE;
 }
 
 enum Faction {
-    KNIGHT;
+    KNIGHT, WIZARD, ELF, ZOMBIE;
 }
 
 public abstract class Customer extends Character {
@@ -30,12 +30,6 @@ public abstract class Customer extends Character {
         this.waitCounter = 0;
         this.enter();
     }
-
-//    public Customer(float x, float y, Shape shape, int popularity, int goldAmount, int satisfaction) {
-//        this.Customer(x, y, shape, popularity, goldAmount, satisfaction);
-//        this.satisfaction = satisfaction;
-//    }
-
 
     public void setLikes(ItemType[] likes) {
         this.likes = likes;
@@ -99,11 +93,17 @@ public abstract class Customer extends Character {
         ItemType itemType = null;
         if(this.leaving)
             return;
+
+        
         
         if(item instanceof Beer) {
             itemType = ItemType.BEER;
         } else if(item instanceof ChickenLeg) {
             itemType = ItemType.CHICKENLEG;
+        } else if(item instanceof Chalice) {
+            itemType = ItemType.CHALICE;
+        } else if(item instanceof Cheese) {
+            itemType = ItemType.CHEESE;
         }
 
         this.money.buy(item);
@@ -157,7 +157,7 @@ public abstract class Customer extends Character {
     }
 
     protected void checkEntered() {
-        if(this.getY() <= (controller.inn.getDoorPos().y - 10))
+        if(this.getY() <= (controller.inn.getDoorPos().y - 20))
             this.entering = false;
     }
 

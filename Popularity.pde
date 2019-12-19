@@ -40,6 +40,12 @@ public class Popularity {
         switch (faction) {
                 case KNIGHT:
                     return 0;
+                case WIZARD:
+                    return 1;
+                case ELF:
+                    return 2;
+                case ZOMBIE:
+                    return 3;
         }
 
         return 0;

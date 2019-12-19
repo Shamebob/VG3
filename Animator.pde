@@ -1,7 +1,7 @@
 public class Animator {
     float actionBarStartX, actionBarHeight, infoStartX, infoWidth, customerEmotionsWidth, customerEmotionsStartX;
     ItemType[] newCustomerLikes, newCustomerDislikes;
-    PImage[] crests = new PImage[]{KNIGHT_CREST};
+    PImage[] crests = new PImage[]{KNIGHT_CREST, WIZARD_CREST, ELF_CREST, ZOMBIE_CREST};
 
     public Animator() {
         this.actionBarStartX = displayWidth/4;
@@ -129,7 +129,7 @@ public class Animator {
 
     public void setupBuildItems() {
         float actionBoxWidth = (displayWidth/2)/5;
-        PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/3));
+        PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/2));
         PVector factorChange = new PVector(actionBoxWidth, 0);
         for(EnvironmentItem item : controller.build.purchaseItems) {
             item.setPos(currentPos.copy());
@@ -138,7 +138,7 @@ public class Animator {
     }
 
     private void drawInventoryItems(float actionBoxWidth) {
-        PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/3));
+        PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/2));
         PVector factorChange = new PVector(actionBoxWidth, 0);
         for(EnvironmentItem item : controller.player.inventory) {
             item.setPos(currentPos.copy());
@@ -167,20 +167,22 @@ public class Animator {
         image(HAPPY, this.customerEmotionsStartX + (this.customerEmotionsWidth/4) - 10, displayHeight - (actionBarHeight - (this.actionBarHeight/10)), 20, 20);
         image(SAD, this.customerEmotionsStartX + (3 * (this.customerEmotionsWidth/4)) - 10, displayHeight - (actionBarHeight - (this.actionBarHeight/10)), 20, 20);
 
-        float imageSpace = this.customerEmotionsWidth/6;
+        float imageSpace = this.customerEmotionsWidth/4;
         float imageY = displayHeight - (this.actionBarHeight/2);
-        float imageHeight = this.actionBarHeight/4;
+        float imageHeight = this.actionBarHeight/3;
         float currentPoint = this.customerEmotionsStartX + (imageSpace/4);
         float imageWidth = imageSpace/2;
 
         for(ItemType item : this.newCustomerLikes) {
             drawItemType(item, currentPoint, imageY, imageWidth, imageHeight);
+            currentPoint += imageSpace;
         }
 
         currentPoint = this.customerEmotionsStartX + (this.customerEmotionsWidth/2) + (imageSpace/4);
 
         for(ItemType item : this.newCustomerDislikes) {
             drawItemType(item, currentPoint, imageY, imageWidth, imageHeight);
+            currentPoint += imageSpace;
         }
 
     }
@@ -188,11 +190,24 @@ public class Animator {
     public void drawItemType(ItemType item, float x, float y, float width, float height) {
         PImage itemImage = null;
 
-        if(item == ItemType.BEER) {
-            itemImage = BEER;
-        } else if(item == ItemType.CHICKENLEG) {
-            itemImage = CHICKEN_LEG;
+        switch (item) {
+            case BEER:
+                itemImage = BEER;
+                break;
+            
+            case CHICKENLEG:
+                itemImage = CHICKEN_LEG;
+                break;
+
+            case CHALICE:
+                itemImage = CHALICE;
+                break;
+
+            case CHEESE:
+                itemImage = CHEESE;
+                break;
         }
+    
 
         if(itemImage != null)
             image(itemImage, x, y, width, height);
