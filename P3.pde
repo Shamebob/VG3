@@ -1,7 +1,7 @@
 import java.util.Iterator;
 import java.awt.geom.Rectangle2D;
 import java.awt.Shape;
-import processing.sound.*;
+//import processing.sound.*;
 
 // Keep controller as global to control the gamestate.
 Controller controller;
@@ -14,7 +14,7 @@ PImage WIZARD_IDLE, WIZARD_CREST, WIZARD_BOSS_IDLE;
 PImage ELF_IDLE, ELF_CREST, ELF_BOSS_IDLE;
 PImage ZOMBIE_IDLE, ZOMBIE_CREST, ZOMBIE_BOSS_IDLE;
 PImage KEG, BEER, CHICKEN, CHICKEN_LEG, CHALICE, CHALICE_TABLE, CHEESE, CHEESE_BARREL;
-// SoundFile music;
+//SoundFile music;
 
 /**
 * Setup the game
@@ -22,7 +22,7 @@ PImage KEG, BEER, CHICKEN, CHICKEN_LEG, CHALICE, CHALICE_TABLE, CHEESE, CHEESE_B
 void setup() {
   fullScreen();
   noCursor();
-  frameRate(60);
+  frameRate(30);
   // music = new SoundFile(this, "inn_music.mp3");
   // TODO: Re-enable this.
   // music.loop();
@@ -94,7 +94,7 @@ void draw() {
 * Register key pressed for moving and firing.
 */
 void keyPressed() {
-    float moveSize = 10;
+    float moveSize = 5;
 
     switch(key) {
         case 'w':

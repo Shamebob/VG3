@@ -29,7 +29,7 @@ public class Inn {
                 this.walls.add(new Wall(curX, startY, wallWidth, wallHeight, WallType.BOTTOM));
             }
             
-            if(i % 5 == 1) {
+            if(i % 4 == 1) {
                 this.walls.add(new Wall(curX, endY, wallWidth, wallHeight, WallType.WINDOW));
             } else {
                 this.walls.add(new Wall(curX, endY, wallWidth, wallHeight, WallType.TOP));
@@ -38,10 +38,9 @@ public class Inn {
         }
 
         wallCount = int((this.startY - this.endY)/wallHeight) + 1;
-        println("Wall count: " + wallCount);
         for(int i = 0; i < wallCount; i++) {
-            this.walls.add(new Wall(this.startX, curY, wallWidth/4, wallHeight, WallType.SIDE));
-            this.walls.add(new Wall(curX, curY, wallWidth/4, wallHeight, WallType.SIDE));
+            this.walls.add(new Wall(this.startX, curY, wallWidth/3, wallHeight, WallType.SIDE));
+            this.walls.add(new Wall(curX, curY, wallWidth/3, wallHeight, WallType.SIDE));
             curY += wallHeight;
         }
         System.out.println("Number of walls: " + this.walls.size());
@@ -59,7 +58,7 @@ public class Inn {
         for(int i = 0; i < heightCount; i++) {
             curX = 0;
             for(int j = 0; j < widthCount; j++) {
-                if (!((curX > this.startX && curX < this.endX - floorWidth) && (curY <= this.startY) && (curY >= this.endY))) {
+                if (!((curX > this.startX && curX < this.endX - floorWidth) && (curY <= this.startY - (floorHeight/2) && (curY >= this.endY)))) {
                     this.floor.add(new Floor(curX, curY, floorWidth, floorHeight, FloorType.GRASS));
                 }
                 curX += floorWidth;
