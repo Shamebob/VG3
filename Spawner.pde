@@ -45,6 +45,11 @@ public class Spawner {
         return customer;
     }
 
+    public Worker spawnWorker(ItemType item) {
+        //TODO: Have them walk in the door
+        return new Worker(displayWidth/2 - 100, displayHeight/2 - 100, item);
+    }
+
     public Customer spawnEntourage(Faction faction, float x, float y) {
         int goldAmount = round(random(30, 80));
         int popularity = 80;

@@ -35,10 +35,11 @@ public class P3 extends PApplet {
 Controller controller;
 PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, WINDOW, INDOOR_FLOOR, GRASS, PATH;
 PImage HERO_DOWN_IDLE, HERO_UP_IDLE, HERO_LEFT_IDLE, HERO_RIGHT_IDLE, HERO_PICKUP, HERO_USEITEM;
+PImage SERVER_DOWN_IDLE, SERVER_UP_IDLE, SERVER_LEFT_IDLE, SERVER_RIGHT_IDLE, SERVER_PICKUP, SERVER_USEITEM;
 PImage HAPPY, SAD;
 PImage KNIGHT_IDLE, KNIGHT_CREST, KNIGHT_BOSS_IDLE;
 PImage KEG, BEER, CHICKEN, CHICKEN_LEG;
-SoundFile music;
+// SoundFile music;
 
 /**
 * Setup the game
@@ -47,8 +48,9 @@ public void setup() {
   
   noCursor();
   frameRate(60);
-  music = new SoundFile(this, "inn_music.mp3");
-  music.loop();
+  // music = new SoundFile(this, "inn_music.mp3");
+  // TODO: Re-enable this.
+  // music.loop();
 
   OUTSIDE_WALL = loadImage("outside_wall.png");
   INSIDE_WALL = loadImage("inside_wall.png");
@@ -60,6 +62,13 @@ public void setup() {
   HERO_UP_IDLE = loadImage("player_up1.png");
   HERO_PICKUP = loadImage("player_pickup.png");
   HERO_USEITEM = loadImage("player_useitem.png");
+
+  SERVER_DOWN_IDLE = loadImage("server_idle.png");
+  SERVER_RIGHT_IDLE = loadImage("server_right1.png");
+  SERVER_LEFT_IDLE = loadImage("server_left1.png");
+  SERVER_UP_IDLE = loadImage("server_up1.png");
+  SERVER_PICKUP = loadImage("server_pickup.png");
+  SERVER_USEITEM = loadImage("server_useitem.png");
 
 
   WINDOW = loadImage("window.png");
@@ -164,6 +173,10 @@ public class Animator {
         controller.inn.drawFloor();
         controller.player.draw();
 
+        for(Worker worker: controller.workers) {
+            worker.draw();
+        }
+        
         for(EnvironmentItem item : controller.items) {
             item.draw();
         }
@@ -175,6 +188,7 @@ public class Animator {
         for(Feeling feeling: controller.feelings) {
             feeling.draw();
         }
+
         controller.inn.drawWalls();
         this.drawHUD(controller);
     }
@@ -462,6 +476,7 @@ public class Build {
 
 }
 public abstract class Character extends GameObject {
+    PVector direction;
 
     public Character (float x, float y, Shape shape) {
         super(x, y, shape);
@@ -492,6 +507,14 @@ public abstract class Character extends GameObject {
         }
 
         return new PVector(randomX, randomY);
+    }
+
+    public PVector getDirection() {
+        return this.direction.copy();
+    }
+
+    public PVector getNextMove() {
+        return(this.getPos().add(this.getDirection()));
     }
 
 }
@@ -604,6 +627,7 @@ public class Controller {
     ArrayList<EnvironmentItem> items = new ArrayList<EnvironmentItem>();
     ArrayList<Customer> customers = new ArrayList<Customer>();
     ArrayList<Feeling> feelings = new ArrayList<Feeling>();
+    ArrayList<Worker> workers = new ArrayList<Worker>();
     Boss nextBoss;
     CollisionDetector collisionDetector = new CollisionDetector();
     Cleaner cleaner = new Cleaner();
@@ -625,8 +649,11 @@ public class Controller {
         this.gold.addGold(100);
         this.calculateCustomers();
         this.spawner.setDoorPos(this.inn.getDoorPos());
+        // this.customers.add(new)
         this.gameInPlay = true;
         this.player = spawner.spawnPlayer();
+        this.workers.add(spawner.spawnWorker(ItemType.BEER));
+        this.workers.add(spawner.spawnWorker(ItemType.CHICKENLEG));
     }
 
     public void addInnGold(int amount) {
@@ -779,7 +806,6 @@ public abstract class Customer extends Character {
     int popularity, waitTime, diminishingReturn, waitCounter;
     float satisfaction;
     Gold money;
-    PVector direction;
     int moveCounter;
     boolean entering, leaving;
     ItemType[] likes, dislikes;
@@ -927,7 +953,7 @@ public abstract class Customer extends Character {
     }
 
     protected void checkEntered() {
-        if(this.getY() <= (controller.inn.getDoorPos().y - 20))
+        if(this.getY() <= (controller.inn.getDoorPos().y - 10))
             this.entering = false;
     }
 
@@ -947,6 +973,10 @@ public abstract class Customer extends Character {
 
     public int getPopularity() {
         return this.popularity;
+    }
+
+    public int getDiminishingReturns() {
+        return this.diminishingReturn;
     }
 
     public void entourageLeave(Faction faction, float satisfaction) {
@@ -1317,10 +1347,9 @@ public abstract class NPC extends Character{
 
 }
 public class Player extends Staff {
-    PImage playerImage;
     public Player (float x, float y) {
         super(x, y);
-        this.playerImage = HERO_DOWN_IDLE;
+        this.staffImage = HERO_DOWN_IDLE;
     }
 
     public void setFacing(Facing direction) {
@@ -1331,38 +1360,33 @@ public class Player extends Staff {
 
         switch (direction) {
             case UP:
-                this.playerImage = HERO_UP_IDLE;
+                this.staffImage = HERO_UP_IDLE;
                 break;
             
             case DOWN:
-                this.playerImage = HERO_DOWN_IDLE;
+                this.staffImage = HERO_DOWN_IDLE;
                 break;
             
             case LEFT:
-                this.playerImage = HERO_LEFT_IDLE;
+                this.staffImage = HERO_LEFT_IDLE;
                 break;
             
             case RIGHT:
-                this.playerImage = HERO_RIGHT_IDLE;
+                this.staffImage = HERO_RIGHT_IDLE;
                 break;
         }
     }
 
     @Override
     public void pickupItem() {
-        this.playerImage = HERO_PICKUP;
+        this.staffImage = HERO_PICKUP;
         super.pickupItem();
     }
 
     @Override
     public void useItem(int index) {
-        this.playerImage = HERO_USEITEM;
+        this.staffImage = HERO_USEITEM;
         super.useItem(index);
-    }
-
-    public void draw() {
-        image(this.playerImage, this.getX(), this.getY(), HEIGHT, WIDTH);
-        super.draw();
     }
 }
 final int FACTIONS = 4;
@@ -1480,6 +1504,11 @@ public class Spawner {
         return customer;
     }
 
+    public Worker spawnWorker(ItemType item) {
+        //TODO: Have them walk in the door
+        return new Worker(displayWidth/2 - 100, displayHeight/2 - 100, item);
+    }
+
     public Customer spawnEntourage(Faction faction, float x, float y) {
         int goldAmount = round(random(30, 80));
         int popularity = 80;
@@ -1540,6 +1569,7 @@ enum Facing{
 
 public abstract class Staff extends Character {
     Facing currentFacing;
+    PImage staffImage;
     ArrayList<EnvironmentItem> inventory = new ArrayList<EnvironmentItem>();
 
     public Staff (float x, float y) {
@@ -1548,10 +1578,11 @@ public abstract class Staff extends Character {
     }
 
     public void draw() {
+        image(this.staffImage, this.getX(), this.getY(), HEIGHT, WIDTH);
         this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), WIDTH, HEIGHT));
     }
 
-    private Shape findZone() {
+    protected Shape findZone() {
         float x = this.getX();
         float y = this.getY();
         Shape shapeArea;
@@ -1633,14 +1664,234 @@ public class Wall extends GameObject{
     }
 }
 public class Worker extends Staff {
-    public Worker (float x, float y) {
+    ItemType serving;
+    EnvironmentItem nearbyResource;
+    boolean achievedGoal;
+    Customer target;
+    PVector startPos;
+
+
+    public Worker (float x, float y, ItemType serving) {
         super(x, y);
+        this.startPos = new PVector(x,y);
+        this.currentFacing = Facing.DOWN;
+        this.staffImage = SERVER_DOWN_IDLE;
+        this.serving = serving;
+        this.nearbyResource = null;
+        this.achievedGoal = true;
+        this.direction = new PVector(0,0);
     }
 
+    public void setFacing(Facing facingDirection) {
+        if(facingDirection == this.currentFacing)
+            return;
+        
+        this.currentFacing = facingDirection;
+
+        switch (facingDirection) {
+            case UP:
+                this.staffImage = SERVER_UP_IDLE;
+                break;
+            
+            case DOWN:
+                this.staffImage = SERVER_DOWN_IDLE;
+                break;  
+            
+            case LEFT:
+                this.staffImage = SERVER_LEFT_IDLE;
+                break;
+            
+            case RIGHT:
+                this.staffImage = SERVER_RIGHT_IDLE;
+                break;
+        }
+    }
+
+    private boolean isCloser(PVector newPos) {
+        try {
+            return (this.nearbyResource.getPos().sub(this.getPos()).mag() > newPos.sub(newPos).mag());
+        } catch (NullPointerException e) {
+            return false;
+        }
+    }
+
+    private void findKeg() {
+        System.out.println("Finding Keg");
+        for(EnvironmentItem item : controller.items) {
+            if(!(item instanceof Keg))
+                continue;
+
+            if(this.nearbyResource == null)
+                this.nearbyResource = item;
+            
+            if(this.isCloser(item.getPos()))
+                this.nearbyResource = item;
+        }
+
+    }
+
+    private void findChicken() {
+        System.out.println("Finding chicken");
+        for(EnvironmentItem item : controller.items) {
+            if(!(item instanceof Chicken))
+                continue;
+                
+            if(this.nearbyResource == null && (item instanceof Chicken))
+                this.nearbyResource = item;
+            
+            if(this.isCloser(item.getPos()))
+                this.nearbyResource = item;
+        }
+
+    }
+
+    private void findResource() {
+        switch(this.serving) {
+            case BEER:
+                this.findKeg();
+                break;
+                
+            case CHICKENLEG:
+                this.findChicken();
+                break;
+        }
+    }
+
+    private void findCustomer() {
+        boolean likesItem = false;
+        for(Customer customer : controller.customers) {
+            for(ItemType item : customer.likes) {
+                if(item == this.serving) {
+                     likesItem = true;
+                     break;
+                }
+            }
+
+            if(!likesItem || customer.entering || customer.leaving || customer.getDiminishingReturns() >= 30)
+                continue;
+
+            if(this.target == null)
+                this.target = customer;
+            
+            if(this.isCloser(customer.getPos()))
+                this.target = customer;
+        }
+    }
+
+    @Override
+    public void move(PVector change) {
+        if (!achievedGoal) {
+            if(this.target != null) {
+                this.achievedGoal = this.targetSearch();
+            } else if(this.nearbyResource != null) {
+                this.achievedGoal = this.resourceSearch();
+            }
+        } else {
+            if(this.inventory.size() == 0) {
+                // System.out.println("Going to find resources");
+                this.nearbyResource = null;
+                this.findResource();      
+
+                if(this.nearbyResource == null) {
+                    this.beIdle();
+                } else {
+                    this.achievedGoal = false;
+                }
+                
+            } else if(this.target == null) {
+                // System.out.println("Going to find targets");
+                this.findCustomer();
+                if(this.target == null) {
+                    this.beIdle();
+                } else {
+                    this.achievedGoal = false;
+                }
+            }
+        }
+
+        // System.out.println("Moving!: " +change);
+        super.move(this.direction);
+    }
+
+    private void beIdle() {
+        this.findDirection(this.startPos.copy());
+        if(this.getPos().sub(this.startPos.copy()).mag() < 1) {
+            this.direction = new PVector(0,0);
+         }
+        this.achievedGoal = true;
+    }
+
+    private boolean targetSearch() {
+        if(controller.collisionDetector.checkCollision(this.target.getShape(), this.findZone())) {
+            System.out.println("Found target!");
+            this.useItem(1);
+            this.target = null;
+            return true;
+        } else {
+            this.findDirection(this.target.getPos());
+            return false;
+        }
+    }
+
+    private boolean resourceSearch() {
+        if(controller.collisionDetector.checkCollision(this.nearbyResource.getShape(), this.findZone())) {
+            System.out.println("Found resource!");
+            this.direction = new PVector(0,0);
+            while(this.inventory.size() < 5) {
+                this.pickupItem();
+            }
+            this.nearbyResource = null;
+            return true;
+        } else {
+            this.findDirection(this.nearbyResource.getPos());
+            return false;
+        }
+    }
+
+    private void findDirection(PVector targetPos) {
+        PVector change = targetPos.sub(this.getPos()).normalize();
+        float xChange = change.x;
+        float yChange = change.y;
+        float moveSize = 10;
+
+        if(abs(xChange) > abs(yChange)) {
+            if(xChange >= 0) {
+                this.setFacing(Facing.RIGHT);
+                this.direction = new PVector(moveSize, 0);
+            } else {
+                this.setFacing(Facing.LEFT);
+                this.direction = new PVector(-moveSize, 0);
+            }
+        } else {
+            if(yChange >= 0) {
+                this.setFacing(Facing.DOWN);
+                this.direction = new PVector(0, moveSize);
+            } else {
+                this.setFacing(Facing.UP);
+                this.direction = new PVector(0, -moveSize);
+            }
+        }
+    }
+
+    public void fillInventory() {
+    }
+
+    @Override
     public void draw() {
-        fill(0, 255, 0);
-        rect(this.getX(), this.getY(), HEIGHT,WIDTH);
+        this.move(this.direction);
         super.draw();
+    }
+
+     @Override
+    public void pickupItem() {
+        this.staffImage = SERVER_PICKUP;
+        super.pickupItem();
+    }
+
+    @Override
+    public void useItem(int index) {
+        this.staffImage = SERVER_USEITEM;
+        super.useItem(index);
     }
 
 }

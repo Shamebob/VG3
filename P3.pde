@@ -7,10 +7,11 @@ import processing.sound.*;
 Controller controller;
 PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, WINDOW, INDOOR_FLOOR, GRASS, PATH;
 PImage HERO_DOWN_IDLE, HERO_UP_IDLE, HERO_LEFT_IDLE, HERO_RIGHT_IDLE, HERO_PICKUP, HERO_USEITEM;
+PImage SERVER_DOWN_IDLE, SERVER_UP_IDLE, SERVER_LEFT_IDLE, SERVER_RIGHT_IDLE, SERVER_PICKUP, SERVER_USEITEM;
 PImage HAPPY, SAD;
 PImage KNIGHT_IDLE, KNIGHT_CREST, KNIGHT_BOSS_IDLE;
 PImage KEG, BEER, CHICKEN, CHICKEN_LEG;
-SoundFile music;
+// SoundFile music;
 
 /**
 * Setup the game
@@ -19,7 +20,7 @@ void setup() {
   fullScreen();
   noCursor();
   frameRate(60);
-  music = new SoundFile(this, "inn_music.mp3");
+  // music = new SoundFile(this, "inn_music.mp3");
   // TODO: Re-enable this.
   // music.loop();
 
@@ -33,6 +34,13 @@ void setup() {
   HERO_UP_IDLE = loadImage("player_up1.png");
   HERO_PICKUP = loadImage("player_pickup.png");
   HERO_USEITEM = loadImage("player_useitem.png");
+
+  SERVER_DOWN_IDLE = loadImage("server_idle.png");
+  SERVER_RIGHT_IDLE = loadImage("server_right1.png");
+  SERVER_LEFT_IDLE = loadImage("server_left1.png");
+  SERVER_UP_IDLE = loadImage("server_up1.png");
+  SERVER_PICKUP = loadImage("server_pickup.png");
+  SERVER_USEITEM = loadImage("server_useitem.png");
 
 
   WINDOW = loadImage("window.png");

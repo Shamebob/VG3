@@ -11,6 +11,7 @@ public class Controller {
     ArrayList<EnvironmentItem> items = new ArrayList<EnvironmentItem>();
     ArrayList<Customer> customers = new ArrayList<Customer>();
     ArrayList<Feeling> feelings = new ArrayList<Feeling>();
+    ArrayList<Worker> workers = new ArrayList<Worker>();
     Boss nextBoss;
     CollisionDetector collisionDetector = new CollisionDetector();
     Cleaner cleaner = new Cleaner();
@@ -32,8 +33,11 @@ public class Controller {
         this.gold.addGold(100);
         this.calculateCustomers();
         this.spawner.setDoorPos(this.inn.getDoorPos());
+        // this.customers.add(new)
         this.gameInPlay = true;
         this.player = spawner.spawnPlayer();
+        this.workers.add(spawner.spawnWorker(ItemType.BEER));
+        this.workers.add(spawner.spawnWorker(ItemType.CHICKENLEG));
     }
 
     public void addInnGold(int amount) {

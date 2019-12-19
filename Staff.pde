@@ -7,6 +7,7 @@ enum Facing{
 
 public abstract class Staff extends Character {
     Facing currentFacing;
+    PImage staffImage;
     ArrayList<EnvironmentItem> inventory = new ArrayList<EnvironmentItem>();
 
     public Staff (float x, float y) {
@@ -15,10 +16,11 @@ public abstract class Staff extends Character {
     }
 
     public void draw() {
+        image(this.staffImage, this.getX(), this.getY(), HEIGHT, WIDTH);
         this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), WIDTH, HEIGHT));
     }
 
-    private Shape findZone() {
+    protected Shape findZone() {
         float x = this.getX();
         float y = this.getY();
         Shape shapeArea;

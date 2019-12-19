@@ -1,4 +1,5 @@
 public abstract class Character extends GameObject {
+    PVector direction;
 
     public Character (float x, float y, Shape shape) {
         super(x, y, shape);
@@ -29,6 +30,14 @@ public abstract class Character extends GameObject {
         }
 
         return new PVector(randomX, randomY);
+    }
+
+    public PVector getDirection() {
+        return this.direction.copy();
+    }
+
+    public PVector getNextMove() {
+        return(this.getPos().add(this.getDirection()));
     }
 
 }

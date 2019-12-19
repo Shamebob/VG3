@@ -24,6 +24,10 @@ public class Animator {
         controller.inn.drawFloor();
         controller.player.draw();
 
+        for(Worker worker: controller.workers) {
+            worker.draw();
+        }
+        
         for(EnvironmentItem item : controller.items) {
             item.draw();
         }
@@ -35,6 +39,7 @@ public class Animator {
         for(Feeling feeling: controller.feelings) {
             feeling.draw();
         }
+
         controller.inn.drawWalls();
         this.drawHUD(controller);
     }

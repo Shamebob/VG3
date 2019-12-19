@@ -10,7 +10,6 @@ public abstract class Customer extends Character {
     int popularity, waitTime, diminishingReturn, waitCounter;
     float satisfaction;
     Gold money;
-    PVector direction;
     int moveCounter;
     boolean entering, leaving;
     ItemType[] likes, dislikes;
@@ -158,7 +157,7 @@ public abstract class Customer extends Character {
     }
 
     protected void checkEntered() {
-        if(this.getY() <= (controller.inn.getDoorPos().y - 20))
+        if(this.getY() <= (controller.inn.getDoorPos().y - 10))
             this.entering = false;
     }
 
@@ -178,6 +177,10 @@ public abstract class Customer extends Character {
 
     public int getPopularity() {
         return this.popularity;
+    }
+
+    public int getDiminishingReturns() {
+        return this.diminishingReturn;
     }
 
     public void entourageLeave(Faction faction, float satisfaction) {
