@@ -71,13 +71,40 @@ public class Worker extends Staff {
             if(!(item instanceof Chicken))
                 continue;
                 
-            if(this.nearbyResource == null && (item instanceof Chicken))
+            if(this.nearbyResource == null)
                 this.nearbyResource = item;
             
             if(this.isCloser(item.getPos()))
                 this.nearbyResource = item;
         }
+    }
 
+    private void findCheese() {
+        System.out.println("Finding cheese");
+        for(EnvironmentItem item : controller.items) {
+            if(!(item instanceof CheeseBarrel))
+                continue;
+                
+            if(this.nearbyResource == null)
+                this.nearbyResource = item;
+            
+            if(this.isCloser(item.getPos()))
+                this.nearbyResource = item;
+        }
+    }
+
+    private void findChalice() {
+        System.out.println("Finding cheese");
+        for(EnvironmentItem item : controller.items) {
+            if(!(item instanceof ChaliceTable))
+                continue;
+                
+            if(this.nearbyResource == null)
+                this.nearbyResource = item;
+            
+            if(this.isCloser(item.getPos()))
+                this.nearbyResource = item;
+        }
     }
 
     private void findResource() {
@@ -88,6 +115,14 @@ public class Worker extends Staff {
                 
             case CHICKENLEG:
                 this.findChicken();
+                break;
+
+            case CHALICE:
+                this.findChalice();
+                break;
+            
+            case CHEESE:
+                this.findCheese();
                 break;
         }
     }
