@@ -7,12 +7,12 @@ public class Knight extends Customer {
         super.draw();
         this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), 30, 40));
         image(KNIGHT_IDLE, this.getX(), this.getY(), 30, 40);
-        //TODO: Make sure they don't leave until they're done.
     }
 
     @Override
     protected void leave() {
-        controller.popularity.addKnightPopularity(this.evaluatePerformance());
+        System.out.println("Called:");
+        controller.popularity.addPopularity(Faction.KNIGHT, this.evaluatePerformance());
         super.leave();
     }
 }

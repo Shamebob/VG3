@@ -132,8 +132,6 @@ public class Animator {
         }
     }
 
-
-
     private void drawInventoryItems(float actionBoxWidth) {
         PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/3));
         PVector factorChange = new PVector(actionBoxWidth, 0);

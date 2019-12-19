@@ -6,6 +6,7 @@ import java.util.Arrays;
 public class Spawner {
     PVector doorPos;
     int knightSpawn, customersInDay;
+    PVector[] locations;
     /**
     * Constructor for a spawner.
     */
@@ -15,6 +16,9 @@ public class Spawner {
 
     public void setDoorPos(PVector doorPos) {
         this.doorPos = doorPos;
+        float x = this.doorPos.x;
+        float y = displayHeight - (displayHeight/10);
+        this.locations = new PVector[]{new PVector(x - 50, y - 50), new PVector(x-50, y+50), new PVector(x+50, y-50), new PVector(x+50, y+50)};
     }
 
     public void setKnightSpawn(int count) {
@@ -33,41 +37,47 @@ public class Spawner {
     }
 
     public Customer spawnCustomer() {
-        int goldAmount = 50;
-        int popularity = 50;
+        int goldAmount = round(random(30, 80));
+        int popularity = round(random(30, 80));
         Customer customer;
         customer = new Knight(this.doorPos.x + 10, displayHeight - (displayHeight/10), popularity, goldAmount);
         generateLikesAndDislikes(customer, controller.popularity.getKnightPopularityLevel());
         return customer;
     }
-    
-    private Customer spawnKnight(float x, float y) {
-        int goldAmount = 50;
-        int popularity = 50;
-        Customer customer;
-        customer = new Knight(x, y, popularity, goldAmount);
-        generateLikesAndDislikes(customer, controller.popularity.getKnightPopularityLevel());
+
+    public Customer spawnEntourage(Faction faction, float x, float y) {
+        int goldAmount = round(random(30, 80));
+        int popularity = 80;
+        Customer customer = null;
+
+        switch (faction) {
+            case KNIGHT:
+                customer = new Knight(x, y, popularity, goldAmount);
+                break;
+        }
+
+        generateLikesAndDislikes(customer, controller.popularity.getPopularityLevel(faction));
         return customer;
     }
 
-    public Boss spawnKnightBoss() {
-        float x = this.doorPos.x;
-        float y = displayHeight - (displayHeight/10);
+    public Boss spawnBoss(Faction faction) {
         ArrayList<Customer> entourage = new ArrayList<Customer>();
-        PVector[] locations = new PVector[]{new PVector(x - 50, y - 50), new PVector(x-50, y+50), new PVector(x+50, y-50), new PVector(x+50, y+50)};
 
-        for(PVector location : locations) {
-            entourage.add(spawnKnight(x, y));
+        for(PVector location : this.locations) {
+            entourage.add(spawnEntourage(faction, location.x, location.y));
         }
-        Boss boss = new Boss(this.doorPos.x + 10, displayHeight - (displayHeight/10), 500, 500, Faction.KNIGHT, entourage);
-        generateLikesAndDislikes(boss, controller.popularity.getKnightPopularityLevel());
+
+        Boss boss = new Boss(this.doorPos.x + 10, displayHeight - (displayHeight/10), 500, 500, faction, entourage);
+        generateLikesAndDislikes(boss, controller.popularity.getPopularityLevel(faction));
         return boss;
     }
 
     private void generateLikesAndDislikes(Customer customer, int popularityLevel) {
         //TODO: Give likes and dislikes based on accumulated gold and not popularity.
         ArrayList<ItemType> items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
-        int itemNumber = popularityLevel;
+        //TODO: Allow this int itemNumber = popularityLevel;
+        int itemNumber = items.size() - 1;
+
         ItemType[] likedItems = new ItemType[itemNumber];
         ItemType[] dislikedItems = new ItemType[itemNumber];
 

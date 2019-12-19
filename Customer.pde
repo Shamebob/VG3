@@ -7,14 +7,13 @@ enum Faction {
 }
 
 public abstract class Customer extends Character {
-    int popularity;
+    int popularity, waitTime, diminishingReturn, waitCounter;
     float satisfaction;
     Gold money;
     PVector direction;
     int moveCounter;
     boolean entering, leaving;
     ItemType[] likes, dislikes;
-    int diminishingReturn;
 
     public Customer(float x, float y, Shape shape, int popularity, int goldAmount) {
         super(x, y, shape);
@@ -28,8 +27,16 @@ public abstract class Customer extends Character {
         this.likes = new ItemType[0];
         this.dislikes = new ItemType[0];
         this.diminishingReturn = 0;
+        this.waitTime = 240;
+        this.waitCounter = 0;
         this.enter();
     }
+
+//    public Customer(float x, float y, Shape shape, int popularity, int goldAmount, int satisfaction) {
+//        this.Customer(x, y, shape, popularity, goldAmount, satisfaction);
+//        this.satisfaction = satisfaction;
+//    }
+
 
     public void setLikes(ItemType[] likes) {
         this.likes = likes;
@@ -40,6 +47,9 @@ public abstract class Customer extends Character {
     }
 
     public void draw() {
+        if(this.waitTime == 0)
+            this.resetWait();
+
         if (this.diminishingReturn > 0)
             this.diminishingReturn -= 1;
 
@@ -54,13 +64,36 @@ public abstract class Customer extends Character {
         }
 
         if(this.leaving && this.getY() >= displayHeight) {
-            println("Bye bitch");
             this.destroy();
         }
 
+        if(!(this.leaving || this.entering))
+            this.waitTime -= 1;
+        
         this.moveCounter += 1;
     }
 
+    private void resetWait() {
+        if(this.waitTime == 0) {
+            this.satisfaction -= 10;
+            this.waitCounter += 1;
+            controller.addFeeling(new Feeling(this.getX(), this.getY() - 5, Emotion.SAD));
+
+            if(this.waitCounter == 3)
+                this.leave();
+        }
+
+        this.waitTime = 240;
+    }
+
+    @Override
+    public void move(PVector change) {
+        if(this.leaving || this.entering) {
+            this.pos.add(change);
+        } else {
+            super.move(change);
+        }
+    }
    
     public void useItem(EnvironmentItem item) {
         boolean likedItem = false;
@@ -70,8 +103,6 @@ public abstract class Customer extends Character {
         
         if(item instanceof Beer) {
             itemType = ItemType.BEER;
-            //TODO: If the item is correct as to what they want, + lots. Diminishing returns based on likes and dislikes
-            //TODO: Could have it so that new patrons declare what they like?
         } else if(item instanceof ChickenLeg) {
             itemType = ItemType.CHICKENLEG;
         }
@@ -81,6 +112,7 @@ public abstract class Customer extends Character {
         this.addSatisfaction(likedItem);
         println("Satisfaction: : "+ this.satisfaction);
         this.diminishingReturn = 120;
+        this.resetWait();
 
         if(this.money.getAmount() < 10) {
             this.leave();
@@ -121,7 +153,7 @@ public abstract class Customer extends Character {
 
     protected void enter() {
         this.direction = controller.inn.getDoorPos().sub(this.getPos()).normalize();
-        this.direction.y -= 3;
+        this.direction.mult(3);
         this.entering = true;
     }
 
@@ -132,10 +164,25 @@ public abstract class Customer extends Character {
 
     protected void leave() {
         this.leaving = true;
-        this.direction = controller.inn.getDoorPos().sub(this.getPos());
+        System.out.println("Leaving");
+        this.direction = controller.inn.getDoorPos().sub(this.getPos()).normalize().mult(4);
     }
 
     protected float evaluatePerformance() {
         return this.satisfaction/this.popularity;
+    }
+
+    public float getSatisfaction() {
+        return this.satisfaction;
+    }
+
+    public int getPopularity() {
+        return this.popularity;
+    }
+
+    public void entourageLeave(Faction faction, float satisfaction) {
+        this.satisfaction = satisfaction;
+        controller.popularity.addPopularity(faction, this.evaluatePerformance());
+        this.leave();
     }
 }

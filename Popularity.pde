@@ -1,39 +1,68 @@
+final int FACTIONS = 4;
 public class Popularity {
-    float knightPopularity, knightLowerThreshold, knightUpperThreshold;
-    int knightCounter, knightPopularityLevel;
-    boolean seenKnightBoss;
+    float[] popularity, lowerThresholds, upperThresholds;
+    int[] popularityLevels;
+    boolean[] satisfiedBoss;
 
 
     public Popularity() {
-        this.knightPopularity = 0;
-        this.knightPopularityLevel = 1;
-        this.knightCounter = 0;
-        this.knightLowerThreshold = 0;
+        this.popularity = new float[FACTIONS];
+        this.popularityLevels = new int[]{1,1,1,1};
+        this.lowerThresholds = new float[FACTIONS];
+        this.upperThresholds = new float[FACTIONS];
+        this.satisfiedBoss = new boolean[FACTIONS];
     }
 
-    public void addKnightPopularity(float popularity) {
-        this.knightCounter += 1;
-        this.knightPopularity = (this.knightPopularity + popularity);
-        System.out.println("Knight Popularity: "+ this.knightPopularity);
+    public void addPopularity(Faction faction, float popularity) {
+        int index = this.findIndex(faction);
+        this.popularity[index] += popularity;
         
-        if(this.knightPopularity >= (this.knightPopularityLevel * 10)) {
-            this.knightLowerThreshold = this.knightPopularityLevel * 10;
-            this.knightPopularityLevel += 1;
-            this.knightPopularity = 0;
-            this.knightCounter = 0;
+        if(this.popularity[index] >= (this.popularityLevels[index] * 10)) {
+            this.lowerThresholds[index] = this.popularityLevels[index] * 10;
+            this.popularityLevels[index] += 1;
+            this.popularity[index] = 0;
+
+            if(this.popularityLevels[index] == 3 && !this.satisfiedBoss[index])
+                controller.spawnBoss(faction);
         }
         
-        if(this.knightPopularity <= this.knightLowerThreshold && this.knightPopularity > 0) {
-            this.knightPopularityLevel -= 1;
-            this.knightLowerThreshold = this.knightPopularityLevel * 10;
+        if(this.popularity[index] <= this.lowerThresholds[index] && this.popularityLevels[index] > 1) {
+            this.popularity[index] -= 1;
+            this.lowerThresholds[index] = this.popularity[index] * 10;
         } 
     }
 
+    public void bossSatisfied(boolean satisfied, Faction faction) {
+        this.satisfiedBoss[this.findIndex(faction)] = true;
+    }
+
+    private int findIndex(Faction faction) {
+        switch (faction) {
+                case KNIGHT:
+                    return 0;
+        }
+
+        return 0;
+    }
+
     public int[] getPopularityLevels() {
-        return new int[] {this.knightPopularityLevel};
+        return this.popularityLevels;
     }
 
     public int getKnightPopularityLevel() {
-        return this.knightPopularityLevel;
+        return this.popularityLevels[0];
+    }
+
+    public int getPopularityLevel(Faction faction) {
+        return this.popularityLevels[this.findIndex(faction)];
+    }
+
+    public boolean kingReady() {
+        for(boolean boss : this.satisfiedBoss) {
+                if(!boss)
+                    return boss;
+        }
+
+        return true;
     }
 }

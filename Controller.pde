@@ -11,7 +11,7 @@ public class Controller {
     ArrayList<EnvironmentItem> items = new ArrayList<EnvironmentItem>();
     ArrayList<Customer> customers = new ArrayList<Customer>();
     ArrayList<Feeling> feelings = new ArrayList<Feeling>();
-
+    Boss nextBoss;
     CollisionDetector collisionDetector = new CollisionDetector();
     Cleaner cleaner = new Cleaner();
     Spawner spawner = new Spawner();
@@ -34,8 +34,6 @@ public class Controller {
         this.spawner.setDoorPos(this.inn.getDoorPos());
         this.gameInPlay = true;
         this.player = spawner.spawnPlayer();
-        this.items.add(new Keg(displayWidth/2, displayHeight/2));
-        this.items.add(new Chicken(displayWidth/2 + 100, displayHeight/2 + 100));
     }
 
     public void addInnGold(int amount) {
@@ -52,7 +50,20 @@ public class Controller {
             }
 
             this.customers = new ArrayList<Customer>();
-            this.customers.add(spawner.spawnCustomer());
+
+            if(this.nextBoss != null) {
+                this.customers.add(this.nextBoss);
+
+                for(Customer customer: this.nextBoss.entourage) {
+                    this.customers.add(customer);
+                }
+
+                this.nextBoss = null;
+
+            } else {
+                this.customers.add(spawner.spawnCustomer());
+            }
+
             this.endDay = false;
             this.buildMode = false;
         }
@@ -79,10 +90,10 @@ public class Controller {
     * Calculates the customers that have to attend the inn that day, based on popularity of faction.
     */
     private void calculateCustomers() {
-        if(this.popularity.knightPopularityLevel == 1) {
-            this.spawner.setKnightSpawn(5);
+        if(this.popularity.getKnightPopularityLevel() == 1) {
+            this.spawner.setKnightSpawn(3);
         } else {
-            this.spawner.setKnightSpawn(floor(this.popularity.knightPopularity/2));
+            this.spawner.setKnightSpawn(floor(this.popularity.getKnightPopularityLevel()/2));
         }
 
         this.time.setSpawnTimer(960/this.spawner.getCustomersInDay());
@@ -90,19 +101,7 @@ public class Controller {
 
 
     public void spawnBoss(Faction faction) {
-        Boss boss;
-
-        if(faction == Faction.KNIGHT) {
-            boss = spawner.spawnKnightBoss();
-        } else {
-            boss = spawner.spawnKnightBoss();
-        }
-    
-        for(Customer customer : boss.entourage) {
-            this.customers.add(customer);
-        }
-
-        this.customers.add(boss);
+        this.nextBoss = spawner.spawnBoss(faction);
     }
 
     public void movePlayer(float x, float y, Facing direction) {

@@ -1,6 +1,7 @@
 import java.util.Iterator;
 import java.awt.geom.Rectangle2D;
 import java.awt.Shape;
+import processing.sound.*;
 
 // Keep controller as global to control the gamestate.
 Controller controller;
@@ -9,6 +10,7 @@ PImage HERO_DOWN_IDLE, HERO_UP_IDLE, HERO_LEFT_IDLE, HERO_RIGHT_IDLE, HERO_PICKU
 PImage HAPPY, SAD;
 PImage KNIGHT_IDLE, KNIGHT_CREST, KNIGHT_BOSS_IDLE;
 PImage KEG, BEER, CHICKEN, CHICKEN_LEG;
+SoundFile music;
 
 /**
 * Setup the game
@@ -17,6 +19,10 @@ void setup() {
   fullScreen();
   noCursor();
   frameRate(60);
+  music = new SoundFile(this, "inn_music.mp3");
+  // TODO: Re-enable this.
+  // music.loop();
+
   OUTSIDE_WALL = loadImage("outside_wall.png");
   INSIDE_WALL = loadImage("inside_wall.png");
   DOOR = loadImage("door.png");
@@ -41,6 +47,7 @@ void setup() {
   INDOOR_FLOOR = loadImage("indoor_floor.png");
   GRASS = loadImage("grass.png");
   PATH = loadImage("path.png");
+
 
   controller = new Controller();
   controller.start();

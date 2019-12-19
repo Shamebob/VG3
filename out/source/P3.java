@@ -6,6 +6,7 @@ import processing.opengl.*;
 import java.util.Iterator; 
 import java.awt.geom.Rectangle2D; 
 import java.awt.Shape; 
+import processing.sound.*; 
 import java.awt.Shape; 
 import java.awt.geom.Area; 
 import java.awt.geom.Rectangle2D; 
@@ -29,6 +30,7 @@ public class P3 extends PApplet {
 
 
 
+
 // Keep controller as global to control the gamestate.
 Controller controller;
 PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, WINDOW, INDOOR_FLOOR, GRASS, PATH;
@@ -36,6 +38,7 @@ PImage HERO_DOWN_IDLE, HERO_UP_IDLE, HERO_LEFT_IDLE, HERO_RIGHT_IDLE, HERO_PICKU
 PImage HAPPY, SAD;
 PImage KNIGHT_IDLE, KNIGHT_CREST, KNIGHT_BOSS_IDLE;
 PImage KEG, BEER, CHICKEN, CHICKEN_LEG;
+SoundFile music;
 
 /**
 * Setup the game
@@ -44,6 +47,9 @@ public void setup() {
   
   noCursor();
   frameRate(60);
+  music = new SoundFile(this, "inn_music.mp3");
+  music.loop();
+
   OUTSIDE_WALL = loadImage("outside_wall.png");
   INSIDE_WALL = loadImage("inside_wall.png");
   DOOR = loadImage("door.png");
@@ -68,6 +74,7 @@ public void setup() {
   INDOOR_FLOOR = loadImage("indoor_floor.png");
   GRASS = loadImage("grass.png");
   PATH = loadImage("path.png");
+
 
   controller = new Controller();
   controller.start();
@@ -265,8 +272,6 @@ public class Animator {
         }
     }
 
-
-
     private void drawInventoryItems(float actionBoxWidth) {
         PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/3));
         PVector factorChange = new PVector(actionBoxWidth, 0);
@@ -346,6 +351,7 @@ public class Boss extends Customer {
     public Boss(float x, float y, int popularity, int goldAmount, Faction faction, ArrayList<Customer> entourage) {
         super(x, y, ((Shape) new Rectangle2D.Float(x, y, 40, 50)), popularity, goldAmount);
         this.faction = faction;
+        this.satisfaction = -50;
 
         switch (faction) {
             case KNIGHT:
@@ -363,14 +369,24 @@ public class Boss extends Customer {
     }
 
     @Override
-    protected void leave() {
-        if(faction == Faction.KNIGHT) {
-            controller.popularity.addKnightPopularity(this.evaluatePerformance());
+    protected float evaluatePerformance() {
+        float entourageSatisfaction = this.satisfaction;
+        for(Customer customer : entourage) {
+            entourageSatisfaction += customer.getSatisfaction();
         }
 
+        entourageSatisfaction = entourageSatisfaction/(this.entourage.size() + 1);
+        return entourageSatisfaction;
+    }
+
+    @Override
+    protected void leave() {
+        float averageSatisfaction = this.evaluatePerformance();
         for(Customer customer : entourage) {
-            customer.leave();
+            customer.entourageLeave(this.faction, averageSatisfaction);
         }
+
+        controller.popularity.addPopularity(this.faction, averageSatisfaction/this.popularity);
         super.leave();
     }
 
@@ -588,7 +604,7 @@ public class Controller {
     ArrayList<EnvironmentItem> items = new ArrayList<EnvironmentItem>();
     ArrayList<Customer> customers = new ArrayList<Customer>();
     ArrayList<Feeling> feelings = new ArrayList<Feeling>();
-
+    Boss nextBoss;
     CollisionDetector collisionDetector = new CollisionDetector();
     Cleaner cleaner = new Cleaner();
     Spawner spawner = new Spawner();
@@ -611,8 +627,6 @@ public class Controller {
         this.spawner.setDoorPos(this.inn.getDoorPos());
         this.gameInPlay = true;
         this.player = spawner.spawnPlayer();
-        this.items.add(new Keg(displayWidth/2, displayHeight/2));
-        this.items.add(new Chicken(displayWidth/2 + 100, displayHeight/2 + 100));
     }
 
     public void addInnGold(int amount) {
@@ -629,7 +643,20 @@ public class Controller {
             }
 
             this.customers = new ArrayList<Customer>();
-            this.customers.add(spawner.spawnCustomer());
+
+            if(this.nextBoss != null) {
+                this.customers.add(this.nextBoss);
+
+                for(Customer customer: this.nextBoss.entourage) {
+                    this.customers.add(customer);
+                }
+
+                this.nextBoss = null;
+
+            } else {
+                this.customers.add(spawner.spawnCustomer());
+            }
+
             this.endDay = false;
             this.buildMode = false;
         }
@@ -656,10 +683,10 @@ public class Controller {
     * Calculates the customers that have to attend the inn that day, based on popularity of faction.
     */
     private void calculateCustomers() {
-        if(this.popularity.knightPopularityLevel == 1) {
-            this.spawner.setKnightSpawn(5);
+        if(this.popularity.getKnightPopularityLevel() == 1) {
+            this.spawner.setKnightSpawn(3);
         } else {
-            this.spawner.setKnightSpawn(floor(this.popularity.knightPopularity/2));
+            this.spawner.setKnightSpawn(floor(this.popularity.getKnightPopularityLevel()/2));
         }
 
         this.time.setSpawnTimer(960/this.spawner.getCustomersInDay());
@@ -667,19 +694,7 @@ public class Controller {
 
 
     public void spawnBoss(Faction faction) {
-        Boss boss;
-
-        if(faction == Faction.KNIGHT) {
-            boss = spawner.spawnKnightBoss();
-        } else {
-            boss = spawner.spawnKnightBoss();
-        }
-    
-        for(Customer customer : boss.entourage) {
-            this.customers.add(customer);
-        }
-
-        this.customers.add(boss);
+        this.nextBoss = spawner.spawnBoss(faction);
     }
 
     public void movePlayer(float x, float y, Facing direction) {
@@ -761,14 +776,13 @@ enum Faction {
 }
 
 public abstract class Customer extends Character {
-    int popularity;
+    int popularity, waitTime, diminishingReturn, waitCounter;
     float satisfaction;
     Gold money;
     PVector direction;
     int moveCounter;
     boolean entering, leaving;
     ItemType[] likes, dislikes;
-    int diminishingReturn;
 
     public Customer(float x, float y, Shape shape, int popularity, int goldAmount) {
         super(x, y, shape);
@@ -782,8 +796,16 @@ public abstract class Customer extends Character {
         this.likes = new ItemType[0];
         this.dislikes = new ItemType[0];
         this.diminishingReturn = 0;
+        this.waitTime = 240;
+        this.waitCounter = 0;
         this.enter();
     }
+
+//    public Customer(float x, float y, Shape shape, int popularity, int goldAmount, int satisfaction) {
+//        this.Customer(x, y, shape, popularity, goldAmount, satisfaction);
+//        this.satisfaction = satisfaction;
+//    }
+
 
     public void setLikes(ItemType[] likes) {
         this.likes = likes;
@@ -794,6 +816,9 @@ public abstract class Customer extends Character {
     }
 
     public void draw() {
+        if(this.waitTime == 0)
+            this.resetWait();
+
         if (this.diminishingReturn > 0)
             this.diminishingReturn -= 1;
 
@@ -808,13 +833,36 @@ public abstract class Customer extends Character {
         }
 
         if(this.leaving && this.getY() >= displayHeight) {
-            println("Bye bitch");
             this.destroy();
         }
 
+        if(!(this.leaving || this.entering))
+            this.waitTime -= 1;
+        
         this.moveCounter += 1;
     }
 
+    private void resetWait() {
+        if(this.waitTime == 0) {
+            this.satisfaction -= 10;
+            this.waitCounter += 1;
+            controller.addFeeling(new Feeling(this.getX(), this.getY() - 5, Emotion.SAD));
+
+            if(this.waitCounter == 3)
+                this.leave();
+        }
+
+        this.waitTime = 240;
+    }
+
+    @Override
+    public void move(PVector change) {
+        if(this.leaving || this.entering) {
+            this.pos.add(change);
+        } else {
+            super.move(change);
+        }
+    }
    
     public void useItem(EnvironmentItem item) {
         boolean likedItem = false;
@@ -824,8 +872,6 @@ public abstract class Customer extends Character {
         
         if(item instanceof Beer) {
             itemType = ItemType.BEER;
-            //TODO: If the item is correct as to what they want, + lots. Diminishing returns based on likes and dislikes
-            //TODO: Could have it so that new patrons declare what they like?
         } else if(item instanceof ChickenLeg) {
             itemType = ItemType.CHICKENLEG;
         }
@@ -835,6 +881,7 @@ public abstract class Customer extends Character {
         this.addSatisfaction(likedItem);
         println("Satisfaction: : "+ this.satisfaction);
         this.diminishingReturn = 120;
+        this.resetWait();
 
         if(this.money.getAmount() < 10) {
             this.leave();
@@ -875,7 +922,7 @@ public abstract class Customer extends Character {
 
     protected void enter() {
         this.direction = controller.inn.getDoorPos().sub(this.getPos()).normalize();
-        this.direction.y -= 3;
+        this.direction.mult(3);
         this.entering = true;
     }
 
@@ -886,11 +933,26 @@ public abstract class Customer extends Character {
 
     protected void leave() {
         this.leaving = true;
-        this.direction = controller.inn.getDoorPos().sub(this.getPos());
+        System.out.println("Leaving");
+        this.direction = controller.inn.getDoorPos().sub(this.getPos()).normalize().mult(4);
     }
 
     protected float evaluatePerformance() {
         return this.satisfaction/this.popularity;
+    }
+
+    public float getSatisfaction() {
+        return this.satisfaction;
+    }
+
+    public int getPopularity() {
+        return this.popularity;
+    }
+
+    public void entourageLeave(Faction faction, float satisfaction) {
+        this.satisfaction = satisfaction;
+        controller.popularity.addPopularity(faction, this.evaluatePerformance());
+        this.leave();
     }
 }
 public abstract class EnvironmentItem extends GameObject {
@@ -1238,12 +1300,12 @@ public class Knight extends Customer {
         super.draw();
         this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), 30, 40));
         image(KNIGHT_IDLE, this.getX(), this.getY(), 30, 40);
-        //TODO: Make sure they don't leave until they're done.
     }
 
     @Override
     protected void leave() {
-        controller.popularity.addKnightPopularity(this.evaluatePerformance());
+        System.out.println("Called:");
+        controller.popularity.addPopularity(Faction.KNIGHT, this.evaluatePerformance());
         super.leave();
     }
 }
@@ -1303,43 +1365,72 @@ public class Player extends Staff {
         super.draw();
     }
 }
+final int FACTIONS = 4;
 public class Popularity {
-    float knightPopularity, knightLowerThreshold, knightUpperThreshold;
-    int knightCounter, knightPopularityLevel;
-    boolean seenKnightBoss;
+    float[] popularity, lowerThresholds, upperThresholds;
+    int[] popularityLevels;
+    boolean[] satisfiedBoss;
 
 
     public Popularity() {
-        this.knightPopularity = 0;
-        this.knightPopularityLevel = 1;
-        this.knightCounter = 0;
-        this.knightLowerThreshold = 0;
+        this.popularity = new float[FACTIONS];
+        this.popularityLevels = new int[]{1,1,1,1};
+        this.lowerThresholds = new float[FACTIONS];
+        this.upperThresholds = new float[FACTIONS];
+        this.satisfiedBoss = new boolean[FACTIONS];
     }
 
-    public void addKnightPopularity(float popularity) {
-        this.knightCounter += 1;
-        this.knightPopularity = (this.knightPopularity + popularity);
-        System.out.println("Knight Popularity: "+ this.knightPopularity);
+    public void addPopularity(Faction faction, float popularity) {
+        int index = this.findIndex(faction);
+        this.popularity[index] += popularity;
         
-        if(this.knightPopularity >= (this.knightPopularityLevel * 10)) {
-            this.knightLowerThreshold = this.knightPopularityLevel * 10;
-            this.knightPopularityLevel += 1;
-            this.knightPopularity = 0;
-            this.knightCounter = 0;
+        if(this.popularity[index] >= (this.popularityLevels[index] * 10)) {
+            this.lowerThresholds[index] = this.popularityLevels[index] * 10;
+            this.popularityLevels[index] += 1;
+            this.popularity[index] = 0;
+
+            if(this.popularityLevels[index] == 3 && !this.satisfiedBoss[index])
+                controller.spawnBoss(faction);
         }
         
-        if(this.knightPopularity <= this.knightLowerThreshold && this.knightPopularity > 0) {
-            this.knightPopularityLevel -= 1;
-            this.knightLowerThreshold = this.knightPopularityLevel * 10;
+        if(this.popularity[index] <= this.lowerThresholds[index] && this.popularityLevels[index] > 1) {
+            this.popularity[index] -= 1;
+            this.lowerThresholds[index] = this.popularity[index] * 10;
         } 
     }
 
+    public void bossSatisfied(boolean satisfied, Faction faction) {
+        this.satisfiedBoss[this.findIndex(faction)] = true;
+    }
+
+    private int findIndex(Faction faction) {
+        switch (faction) {
+                case KNIGHT:
+                    return 0;
+        }
+
+        return 0;
+    }
+
     public int[] getPopularityLevels() {
-        return new int[] {this.knightPopularityLevel};
+        return this.popularityLevels;
     }
 
     public int getKnightPopularityLevel() {
-        return this.knightPopularityLevel;
+        return this.popularityLevels[0];
+    }
+
+    public int getPopularityLevel(Faction faction) {
+        return this.popularityLevels[this.findIndex(faction)];
+    }
+
+    public boolean kingReady() {
+        for(boolean boss : this.satisfiedBoss) {
+                if(!boss)
+                    return boss;
+        }
+
+        return true;
     }
 }
 
@@ -1350,6 +1441,7 @@ public class Popularity {
 public class Spawner {
     PVector doorPos;
     int knightSpawn, customersInDay;
+    PVector[] locations;
     /**
     * Constructor for a spawner.
     */
@@ -1359,6 +1451,9 @@ public class Spawner {
 
     public void setDoorPos(PVector doorPos) {
         this.doorPos = doorPos;
+        float x = this.doorPos.x;
+        float y = displayHeight - (displayHeight/10);
+        this.locations = new PVector[]{new PVector(x - 50, y - 50), new PVector(x-50, y+50), new PVector(x+50, y-50), new PVector(x+50, y+50)};
     }
 
     public void setKnightSpawn(int count) {
@@ -1377,41 +1472,47 @@ public class Spawner {
     }
 
     public Customer spawnCustomer() {
-        int goldAmount = 50;
-        int popularity = 50;
+        int goldAmount = round(random(30, 80));
+        int popularity = round(random(30, 80));
         Customer customer;
         customer = new Knight(this.doorPos.x + 10, displayHeight - (displayHeight/10), popularity, goldAmount);
         generateLikesAndDislikes(customer, controller.popularity.getKnightPopularityLevel());
         return customer;
     }
-    
-    private Customer spawnKnight(float x, float y) {
-        int goldAmount = 50;
-        int popularity = 50;
-        Customer customer;
-        customer = new Knight(x, y, popularity, goldAmount);
-        generateLikesAndDislikes(customer, controller.popularity.getKnightPopularityLevel());
+
+    public Customer spawnEntourage(Faction faction, float x, float y) {
+        int goldAmount = round(random(30, 80));
+        int popularity = 80;
+        Customer customer = null;
+
+        switch (faction) {
+            case KNIGHT:
+                customer = new Knight(x, y, popularity, goldAmount);
+                break;
+        }
+
+        generateLikesAndDislikes(customer, controller.popularity.getPopularityLevel(faction));
         return customer;
     }
 
-    public Boss spawnKnightBoss() {
-        float x = this.doorPos.x;
-        float y = displayHeight - (displayHeight/10);
+    public Boss spawnBoss(Faction faction) {
         ArrayList<Customer> entourage = new ArrayList<Customer>();
-        PVector[] locations = new PVector[]{new PVector(x - 50, y - 50), new PVector(x-50, y+50), new PVector(x+50, y-50), new PVector(x+50, y+50)};
 
-        for(PVector location : locations) {
-            entourage.add(spawnKnight(x, y));
+        for(PVector location : this.locations) {
+            entourage.add(spawnEntourage(faction, location.x, location.y));
         }
-        Boss boss = new Boss(this.doorPos.x + 10, displayHeight - (displayHeight/10), 500, 500, Faction.KNIGHT, entourage);
-        generateLikesAndDislikes(boss, controller.popularity.getKnightPopularityLevel());
+
+        Boss boss = new Boss(this.doorPos.x + 10, displayHeight - (displayHeight/10), 500, 500, faction, entourage);
+        generateLikesAndDislikes(boss, controller.popularity.getPopularityLevel(faction));
         return boss;
     }
 
     private void generateLikesAndDislikes(Customer customer, int popularityLevel) {
         //TODO: Give likes and dislikes based on accumulated gold and not popularity.
         ArrayList<ItemType> items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
-        int itemNumber = popularityLevel;
+        //TODO: Allow this int itemNumber = popularityLevel;
+        int itemNumber = items.size() - 1;
+
         ItemType[] likedItems = new ItemType[itemNumber];
         ItemType[] dislikedItems = new ItemType[itemNumber];
 
@@ -1587,6 +1688,7 @@ public class Time {
         if(this.hour == 0) {
             this.dayOver = true;
             controller.endDay = true;
+            controller.buildMode = true;
         }
     }
 

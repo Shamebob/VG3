@@ -6,6 +6,7 @@ public class Boss extends Customer {
     public Boss(float x, float y, int popularity, int goldAmount, Faction faction, ArrayList<Customer> entourage) {
         super(x, y, ((Shape) new Rectangle2D.Float(x, y, 40, 50)), popularity, goldAmount);
         this.faction = faction;
+        this.satisfaction = -50;
 
         switch (faction) {
             case KNIGHT:
@@ -23,14 +24,24 @@ public class Boss extends Customer {
     }
 
     @Override
-    protected void leave() {
-        if(faction == Faction.KNIGHT) {
-            controller.popularity.addKnightPopularity(this.evaluatePerformance());
+    protected float evaluatePerformance() {
+        float entourageSatisfaction = this.satisfaction;
+        for(Customer customer : entourage) {
+            entourageSatisfaction += customer.getSatisfaction();
         }
 
+        entourageSatisfaction = entourageSatisfaction/(this.entourage.size() + 1);
+        return entourageSatisfaction;
+    }
+
+    @Override
+    protected void leave() {
+        float averageSatisfaction = this.evaluatePerformance();
         for(Customer customer : entourage) {
-            customer.leave();
+            customer.entourageLeave(this.faction, averageSatisfaction);
         }
+
+        controller.popularity.addPopularity(this.faction, averageSatisfaction/this.popularity);
         super.leave();
     }
 
