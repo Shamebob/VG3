@@ -1730,15 +1730,13 @@ public class Popularity {
     }
 
     public int calculateSpawn(Faction faction) {
-        // int index = this.findIndex(faction);
-        // if()
-        // if(this.popularity.getKnightPopularityLevel() == 1) {
-        //     this.spawner.setKnightSpawn(3);
-        // } else {
-        //     this.spawner.setKnightSpawn(floor(this.popularity.getKnightPopularityLevel()/2));
-        // }
+        int index = this.findIndex(faction);
 
-        return 1;
+        if(this.popularity[index] < 2) {
+            return 1;
+        } else {
+            return floor(this.popularity[index]/2);
+        }
     }
 }
 

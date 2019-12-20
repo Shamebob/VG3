@@ -94,8 +94,6 @@ public abstract class Customer extends Character {
         if(this.leaving)
             return;
 
-        
-        
         if(item instanceof Beer) {
             itemType = ItemType.BEER;
         } else if(item instanceof ChickenLeg) {

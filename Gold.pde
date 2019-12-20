@@ -30,10 +30,15 @@ public class Gold {
 
     public void buy(EnvironmentItem item) {
         int val = 0;
+        
         if(item instanceof Beer) {
             val = 10;
         } else if(item instanceof ChickenLeg) {
             val = 5;
+        } else if(item instanceof Chalice) {
+            val = 8;
+        } else if(item instanceof Cheese) {
+            val = 7;
         }
 
         this.amount -= val;
