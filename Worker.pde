@@ -1,10 +1,10 @@
+// Worker is an AI of the staff class.
 public class Worker extends Staff {
     ItemType serving;
     EnvironmentItem nearbyResource;
     boolean achievedGoal;
     Customer target;
     PVector startPos;
-
 
     public Worker (float x, float y, ItemType serving) {
         super(x, y);
@@ -17,6 +17,7 @@ public class Worker extends Staff {
         this.direction = new PVector(0,0);
     }
 
+    // Set the direction the character is facing in for the purpose of visuals
     public void setFacing(Facing facingDirection) {
         if(facingDirection == this.currentFacing)
             return;
@@ -42,6 +43,7 @@ public class Worker extends Staff {
         }
     }
 
+    // Check if a resource is closer and therefore the best path
     private boolean isCloser(PVector newPos) {
         try {
             return (this.nearbyResource.getPos().sub(this.getPos()).mag() > newPos.sub(newPos).mag());
@@ -50,6 +52,7 @@ public class Worker extends Staff {
         }
     }
 
+    // Find a nearby keg to replenish resources
     private void findKeg() {
         System.out.println("Finding Keg");
         for(EnvironmentItem item : controller.items) {
@@ -65,6 +68,7 @@ public class Worker extends Staff {
 
     }
 
+    // Find a nearby chicken to replenish resources
     private void findChicken() {
         System.out.println("Finding chicken");
         for(EnvironmentItem item : controller.items) {
@@ -79,6 +83,7 @@ public class Worker extends Staff {
         }
     }
 
+    // Find a nearby Cheese Barrel to replenish resources
     private void findCheese() {
         System.out.println("Finding cheese");
         for(EnvironmentItem item : controller.items) {
@@ -93,6 +98,7 @@ public class Worker extends Staff {
         }
     }
 
+    // Find a nearby Chalice table to replenish resources
     private void findChalice() {
         System.out.println("Finding cheese");
         for(EnvironmentItem item : controller.items) {
@@ -107,6 +113,7 @@ public class Worker extends Staff {
         }
     }
 
+    // Find the resource that the worker has bee assigned to serve
     private void findResource() {
         switch(this.serving) {
             case BEER:
@@ -127,6 +134,7 @@ public class Worker extends Staff {
         }
     }
 
+    // Find a customer who likes the items being served
     private void findCustomer() {
         boolean likesItem = false;
         for(Customer customer : controller.customers) {
@@ -137,6 +145,7 @@ public class Worker extends Staff {
                 }
             }
 
+            // Ensures the customer will receive the item well.
             if(!likesItem || customer.entering || customer.leaving || customer.getDiminishingReturns() >= 10) {
                 continue;
             } else {
@@ -149,8 +158,10 @@ public class Worker extends Staff {
         }
     }
 
+    // Move the AI.
     @Override
     public void move(PVector change) {
+        // Where the AI has decided on it's goal, try to fulfill it.
         if (!achievedGoal) {
             if(this.target != null) {
                 this.achievedGoal = this.targetSearch();
@@ -158,8 +169,8 @@ public class Worker extends Staff {
                 this.achievedGoal = this.resourceSearch();
             }
         } else {
+            // Replenish inventory
             if(this.inventory.size() == 0) {
-                // System.out.println("Going to find resources");
                 this.nearbyResource = null;
                 this.findResource();      
 
@@ -170,7 +181,7 @@ public class Worker extends Staff {
                 }
                 
             } else if(this.target == null) {
-                // System.out.println("Going to find targets");
+                // Find a new target to serve
                 this.findCustomer();
                 if(this.target == null) {
                     this.beIdle();
@@ -184,6 +195,7 @@ public class Worker extends Staff {
         super.move(this.direction);
     }
 
+    // Used to give the worker something to do when it has a full inventory and has server all of the targets
     private void beIdle() {
         this.findDirection(this.startPos.copy());
         if(this.getPos().sub(this.startPos.copy()).mag() < 1) {
@@ -192,6 +204,7 @@ public class Worker extends Staff {
         this.achievedGoal = true;
     }
 
+    // Find the target and serve it items when it's nearby. otherwise, find a path to the target.
     private boolean targetSearch() {
         if(controller.collisionDetector.checkCollision(this.target.getShape(), this.findZone())) {
             System.out.println("Found target!");
@@ -204,6 +217,7 @@ public class Worker extends Staff {
         }
     }
 
+    // Find the resource and uses it  when it's nearby. otherwise, find a path to the resource
     private boolean resourceSearch() {
         if(controller.collisionDetector.checkCollision(this.nearbyResource.getShape(), this.findZone())) {
             System.out.println("Found resource!");
@@ -219,12 +233,14 @@ public class Worker extends Staff {
         }
     }
 
+    // Find a path to the destination
     private void findDirection(PVector targetPos) {
         PVector change = targetPos.sub(this.getPos()).normalize();
         float xChange = change.x;
         float yChange = change.y;
         float moveSize = 10;
 
+        // Move in straight lines
         if(abs(xChange) > abs(yChange)) {
             if(xChange >= 0) {
                 this.setFacing(Facing.RIGHT);

@@ -1,3 +1,6 @@
+/**
+* ChickenLegs are consumed by patrons and chickens are used as a source for them.
+*/
 public class Chicken extends EnvironmentItem {
 
     public Chicken(float x, float y) {

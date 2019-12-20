@@ -5,9 +5,11 @@ enum Facing{
     UP, LEFT, DOWN, RIGHT;
 }
 
+// A staff member is someone who can serve customers.
 public abstract class Staff extends Character {
     Facing currentFacing;
     PImage staffImage;
+    // INventory of items that have been picked up
     ArrayList<EnvironmentItem> inventory = new ArrayList<EnvironmentItem>();
 
     public Staff (float x, float y) {
@@ -20,6 +22,7 @@ public abstract class Staff extends Character {
         this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), WIDTH, HEIGHT));
     }
 
+    // Find the area infront of the character that can be interacted with
     protected Shape findZone() {
         float x = this.getX();
         float y = this.getY();
@@ -46,6 +49,7 @@ public abstract class Staff extends Character {
         return new Rectangle2D.Float(x, y, WIDTH, HEIGHT);
     }
 
+    // Pickup an item from the resources when there is inventory space
     public void pickupItem() {
         EnvironmentItem item = controller.findItem(this.findZone());
         if(item == null || this.inventory.size() >= 5)
@@ -70,6 +74,7 @@ public abstract class Staff extends Character {
         item.use();
     }
 
+    // Use an item
     public void useItem(int index) {
         if(index <= this.inventory.size()) {
             EnvironmentItem item = this.inventory.get(index - 1);

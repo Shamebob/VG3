@@ -2,6 +2,7 @@ enum WallType {
     BOTTOM, SIDE, TOP, DOOR, WINDOW;
 }
 
+// The wall class is used to create a structure for the inn.
 public class Wall extends GameObject{
     float width, height;
     WallType wallType;
@@ -13,6 +14,7 @@ public class Wall extends GameObject{
         this.wallType = wallType;
     }
 
+    // Draw based on what type of wall is being used.
     public void draw() {
         if(this.wallType == WallType.BOTTOM) {
             image(OUTSIDE_WALL, this.getX(), this.getY(), this.width, this.height);

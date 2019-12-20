@@ -24,9 +24,9 @@ void setup() {
   fullScreen();
   noCursor();
   frameRate(30);
-   music = new SoundFile(this, "inn_music.mp3");
+  //  music = new SoundFile(this, "inn_music.mp3");
   // TODO: Re-enable this.
-   music.loop();
+  //  music.loop();
 
   OUTSIDE_WALL = loadImage("outside_wall.png");
   INSIDE_WALL = loadImage("inside_wall.png");

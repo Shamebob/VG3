@@ -1,4 +1,7 @@
+// The player is the character played by the user and is how the user 
+// interfaces with the game world
 public class Player extends Staff {
+    // C
     public Player (float x, float y) {
         super(x, y);
         this.staffImage = HERO_DOWN_IDLE;

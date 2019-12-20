@@ -1,3 +1,6 @@
+/**
+* Cheese is consumed by patrons and is picked up from these cheese barrels.
+*/
 public class CheeseBarrel extends EnvironmentItem {
 
     public CheeseBarrel(float x, float y) {

@@ -2,10 +2,12 @@ enum Emotion {
     HAPPY, SAD, LEAVING;
 }
 
+// THe feeling class is used to express what the characters in the game are doing.
 public class Feeling extends Character {
     int drawCounter;
     PImage drawing;
 
+    // Construct a feeling, setting the image to whatever the feeling is.
     public Feeling(float x, float y, Emotion currentFeeling) {
         super(x, y, null);
         this.drawCounter = 0;
@@ -19,6 +21,7 @@ public class Feeling extends Character {
         }
     }
 
+    // Draw the feeling, moving it and destroying it after a few seconds.
     public void draw() {
         this.drawCounter += 1;
 

@@ -1,7 +1,11 @@
+/**
+* The cleaner class is used to remove items from the game state in order to make things more efficient.
+*/
 public class Cleaner {
     Cleaner() {
     }
 
+    // Dereference destroyed items in order to have them cleaned up by the JVM
     public void cleanGame() {
         cleanEnvironmentItems(controller.items);
         cleanFeelings(controller.feelings);
@@ -41,6 +45,4 @@ public class Cleaner {
         }
     }
 
-
-    
 }

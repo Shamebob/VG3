@@ -2,6 +2,7 @@ enum FloorType {
     GRASS, INDOOR, PATH;
 }
 
+// The floor class is used to tile the room and make the concept of a floor
 public class Floor extends GameObject{
     float width, height;
     PImage imageType;
@@ -19,6 +20,7 @@ public class Floor extends GameObject{
         image(this.imageType, this.getX(), this.getY(), this.width, this.height);
     }
 
+    // Determine what type of floor tile should be displayed
     private void findImageType() {
         if(this.floorType == FloorType.GRASS) {
             this.imageType = GRASS;

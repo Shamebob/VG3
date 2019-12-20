@@ -1,3 +1,4 @@
+// Gold is the currency used in the world and is used to determine whether characters can buy items.s
 public class Gold {
     private int amount;
     private int accumulated;
@@ -10,6 +11,7 @@ public class Gold {
     public void addGold(int quantity) {
         this.amount += quantity;
         this.accumulated += quantity;
+        // When the inn has incurred enough gold then allow for all of the items to be used in the world.
         if(this.accumulated >= 500) {
             controller.build.unlockItems();
         }
@@ -31,6 +33,7 @@ public class Gold {
         return true;
     }
 
+    // Charge different amounts for different items.
     public void buy(EnvironmentItem item) {
         int val = 0;
 

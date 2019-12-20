@@ -2,6 +2,8 @@ import java.awt.geom.Rectangle2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.Shape;
 
+// Base class of all of the classes, used to adhere to the fact that all game objects
+// Require a position, shape and whether or not they are active.
 public abstract class GameObject {
     protected PVector pos;
     protected Shape shape;

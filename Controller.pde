@@ -28,6 +28,7 @@ public class Controller {
         this.gold = new Gold();
     }
 
+    // Start the game
     public void start() {
         this.endDay = true;
         this.time = new Time();
@@ -44,6 +45,7 @@ public class Controller {
         this.gold.addGold(amount);
     }
 
+    // End the day
     public void dayEnd() {
         this.endDay = true;
         this.buildMode = true;
@@ -52,6 +54,8 @@ public class Controller {
         }
     }
 
+    // Go through the required routines at the start of the day, such as calculating ustomers
+    // And checking whether a new boss is to be dealt with.
     public void startDay() {
         if(this.endDay) {
             this.time.newDay();
@@ -89,16 +93,20 @@ public class Controller {
         }
     }
 
+    // Establish what a server should be serving
     public void chooseWorkerServe(float x, float y) {
         this.workerSpawn = new PVector(x, y);
         this.chooseWorkerServe = true;
     }
+        // Establish what a server should be serving
 
     public void workerServer(ItemType item) {
         if(this.gold.buyItem(500) && this.build.unlocked) {
             this.workers.add(this.spawner.spawnWorker(item, this.workerSpawn.x, this.workerSpawn.y));
         }
     }
+
+    // Check that an item is being placed in a valid location
     public boolean checkPlacementLocation(Shape shape) {
         for(EnvironmentItem item : this.items) {
             if(collisionDetector.checkCollision(item.getShape(), shape))
@@ -128,15 +136,17 @@ public class Controller {
         this.time.setSpawnTimer(960/this.spawner.getCustomersInDay());
     }
 
-
+    // Spawn the faction leader of a given faction
     public void spawnBoss(Faction faction) {
         this.nextBoss = spawner.spawnBoss(faction);
     }
 
+    // Spawn the king
     public void spawnKing() {
         this.king = spawner.spawnKing();
     }
 
+    // Handle key presses, either moving the player or moving the build swuare
     public void movePlayer(float x, float y, Facing direction) {
         PVector change = new PVector(x,y);
         if(buildMode) {
@@ -151,6 +161,7 @@ public class Controller {
         }
     }
 
+    // Checka  move is valid
     public boolean checkMove(PVector currentPos, PVector change) {
         PVector nextPos = currentPos.add(change);
         if(inn.wallCollision(nextPos.copy()))
@@ -158,6 +169,7 @@ public class Controller {
         return true;
     }
 
+    // End the game and establish whether or not the character has won before displaying the end of game scren.
     public void endGame(int win) {
         this.winCondition = win;
         this.endDay = false;
@@ -171,6 +183,7 @@ public class Controller {
         this.displayMessage += "\nTotal Gold Made: " + this.gold.accumulated;
     }
 
+    // Draw the gamestate
     public void drawGame() {
         if(this.winCondition != 0) {
             this.animator.drawEndScreen();
@@ -183,6 +196,7 @@ public class Controller {
         }
     }
 
+    // Check whether an item should be picked up
     public EnvironmentItem findItem(Shape shape) {
 
         for(EnvironmentItem item : items) {
@@ -194,6 +208,7 @@ public class Controller {
         return null;
     }
 
+    // Use an item and apply it to all characters within the shape
     public void useItem(EnvironmentItem item, Shape shape) {
         for(Customer customer : this.customers) {
             if(this.collisionDetector.checkCollision(customer.getShape(), shape)) {
@@ -202,6 +217,7 @@ public class Controller {
         }
     }
 
+    // Handle an item key press, either building, using or establishing the serving of items.
     public void itemKeyPress(int itemKey) {
         if(buildMode) {
             if(this.chooseWorkerServe) {
@@ -242,10 +258,12 @@ public class Controller {
         }
     }
 
+    // Add a feeling to the game state
     public void addFeeling(Feeling feeling) {
         this.feelings.add(feeling);
     }
 
+    // Create a new customer
     public void newCustomer() {
         Customer customer = spawner.spawnCustomer();
         if(customer != null)

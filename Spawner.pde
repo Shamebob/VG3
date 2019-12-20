@@ -51,6 +51,7 @@ public class Spawner {
         return new Player(displayWidth/2, displayHeight/2);
     }
 
+    // Randomly spawn Customers when there are some left to be spawned.
     public Customer spawnCustomer() {
         int goldAmount = round(random(30, 80));
         int popularity = round(random(30, 80));
@@ -60,6 +61,7 @@ public class Spawner {
         Customer customer = null;
         if(this.customersInDay > 0) {
             while(customer == null) {
+                // Randomise which type of customer should spawn
                 int val = floor(random(0, 3.5));
                 switch(val) {
                     case 0:
@@ -101,10 +103,12 @@ public class Spawner {
         }
     }
 
+    // Spawn a new Worker AI.
     public Worker spawnWorker(ItemType item, float x, float y) {
         return new Worker(x, y, item);
     }
 
+    // Spawn an entourage for a boss froma  given faction.
     public Customer spawnEntourage(Faction faction, float x, float y) {
         int goldAmount = round(random(30, 80));
         int popularity = 80;
@@ -132,6 +136,7 @@ public class Spawner {
         return customer;
     }
 
+    // Spawn a king with an assorted entourage
     public King spawnKing() {
         ArrayList<Customer> entourage = new ArrayList<Customer>();
         Faction[] factions = Faction.values();
@@ -146,6 +151,7 @@ public class Spawner {
         return king;
     }
 
+    // Spawn a new boss character
     public Boss spawnBoss(Faction faction) {
         ArrayList<Customer> entourage = new ArrayList<Customer>();
 
@@ -158,8 +164,10 @@ public class Spawner {
         return boss;
     }
 
+    // Generate the likes and dislikes of a customer
     private void generateLikesAndDislikes(Customer customer) {
         ArrayList<ItemType> items;
+        // Limit the items that can be used until they are unlocked by the player
         if(controller.gold.accumulated >= 500) {
             items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
         } else {
@@ -171,7 +179,8 @@ public class Spawner {
 
         ItemType[] likedItems = new ItemType[itemNumber];
         ItemType[] dislikedItems = new ItemType[itemNumber];
-
+        
+        // Add one item to the likes and one to the dislikes each time.
         for(int i = 0; i < itemNumber; i++) {
             int index = floor(random(0, items.size()));
             likedItems[i] = items.get(index);

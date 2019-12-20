@@ -1,3 +1,4 @@
+// The inn is the main play area na dis built from walls and floors
 public class Inn {
     private float startX, startY, endX, endY;
     private ArrayList<Wall> walls = new ArrayList<Wall>();
@@ -14,6 +15,7 @@ public class Inn {
         this.constructFloor();
     }
 
+    // Create the walls of the inn
     void buildWalls() {
         float wallWidth = displayWidth/100 * 3;
         int wallCount = int((this.endX - this.startX)/wallWidth);
@@ -22,6 +24,7 @@ public class Inn {
         float curY = endY;
 
         for (int i = 0; i < wallCount; i++) {
+            // Create a door at the halfway point
             if(i == wallCount/2) {
                 this.doorPos = new PVector(curX, startY);
                 this.door = new Wall(curX, startY, wallWidth, wallHeight, WallType.DOOR);
@@ -29,6 +32,7 @@ public class Inn {
                 this.walls.add(new Wall(curX, startY, wallWidth, wallHeight, WallType.BOTTOM));
             }
             
+            // Put in some windows
             if(i % 4 == 1) {
                 this.walls.add(new Wall(curX, endY, wallWidth, wallHeight, WallType.WINDOW));
             } else {
@@ -46,6 +50,7 @@ public class Inn {
         System.out.println("Number of walls: " + this.walls.size());
     }
 
+    // Construct the floor of the play area.
      void constructFloor() {
         float floorWidth = displayWidth/100 * 6;
         int widthCount = ceil(int(displayWidth/floorWidth)) + 1;
@@ -84,6 +89,8 @@ public class Inn {
             curY += floorHeight;
         }
 
+        // Create a path from the inn to the bottom of the screen.
+        // This is where characters are spawned.
         curX = this.doorPos.x;
         curY = this.doorPos.y;
         floorWidth = displayWidth/100 * 3;
@@ -97,13 +104,15 @@ public class Inn {
         
     }
 
+    // Draw the floor and door
     public void drawFloor() {
         for(Floor floor : this.floor) {
             floor.draw();
         }
-
         this.door.draw();
     }
+
+    // Draw the inn walls
     public void drawWalls() {
         for(Wall wall : this.walls) {
             wall.draw();
@@ -137,6 +146,7 @@ public class Inn {
         return this.walls;
     }
 
+    // Check if a position has a wall.
     public boolean wallCollision(PVector position) {
       for(Wall wall : this.walls) {
         if(wall.getShape().contains(position.x, position.y) && wall.wallType != WallType.DOOR) {

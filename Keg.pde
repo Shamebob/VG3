@@ -1,3 +1,4 @@
+// Kegs are used to hold beer, and are the source of it in the world. Can be dropped in build mode.
 public class Keg extends EnvironmentItem {
 
     public Keg(float x, float y) {

@@ -1,3 +1,6 @@
+/**
+* The Time class is used to keep track of the passage of time.
+*/
 public class Time {
     int day, hour, minute, second;
     boolean dayOver;
@@ -28,6 +31,7 @@ public class Time {
         }
     }
 
+    // Set the interval of when characters should be spawned
     public void setSpawnTimer(int spawnTimer) {
         this.spawnTimer = spawnTimer;
     }
@@ -45,6 +49,7 @@ public class Time {
         }
     }
 
+    // Start a new day.
     public void newDay() {
         this.day += 1;
         this.hour = 8;
