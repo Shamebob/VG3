@@ -59,8 +59,13 @@ public class Boss extends Customer {
         for(Customer customer : entourage) {
             customer.entourageLeave(this.faction, averageSatisfaction);
         }
+        
+        if(averageSatisfaction <= 50) {
+            controller.endGame(-1);
+        }
 
         controller.popularity.addPopularity(this.faction, averageSatisfaction/this.popularity);
+        controller.popularity.bossSatisfied(true, this.faction);
         super.leave();
     }
 

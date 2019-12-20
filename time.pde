@@ -41,8 +41,7 @@ public class Time {
 
         if(this.hour == 0) {
             this.dayOver = true;
-            controller.endDay = true;
-            controller.buildMode = true;
+            controller.dayEnd();
         }
     }
 

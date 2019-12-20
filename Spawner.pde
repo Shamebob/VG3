@@ -41,13 +41,13 @@ public class Spawner {
         int popularity = round(random(30, 80));
         Customer customer;
         customer = new Knight(this.doorPos.x + 10, displayHeight - (displayHeight/10), popularity, goldAmount);
-        generateLikesAndDislikes(customer, controller.popularity.getKnightPopularityLevel());
+        generateLikesAndDislikes(customer);
         return customer;
     }
 
-    public Worker spawnWorker(ItemType item) {
+    public Worker spawnWorker(ItemType item, float x, float y) {
         //TODO: Have them walk in the door
-        return new Worker(displayWidth/2 - 100, displayHeight/2 - 100, item);
+        return new Worker(x, y, item);
     }
 
     public Customer spawnEntourage(Faction faction, float x, float y) {
@@ -73,8 +73,22 @@ public class Spawner {
                 break;
         }
 
-        generateLikesAndDislikes(customer, controller.popularity.getPopularityLevel(faction));
+        generateLikesAndDislikes(customer);
         return customer;
+    }
+
+    public King spawnKing() {
+        ArrayList<Customer> entourage = new ArrayList<Customer>();
+        Faction[] factions = Faction.values();
+        int counter = 0;
+        for(PVector location : this.locations) {
+            entourage.add(spawnEntourage(factions[counter], location.x, location.y));
+            counter += 1;
+        }
+
+        King king = new King(this.doorPos.x + 10, displayHeight - (displayHeight/10), 1000, 1000, entourage);
+        generateLikesAndDislikes(king);
+        return king;
     }
 
     public Boss spawnBoss(Faction faction) {
@@ -85,11 +99,11 @@ public class Spawner {
         }
 
         Boss boss = new Boss(this.doorPos.x + 10, displayHeight - (displayHeight/10), 500, 500, faction, entourage);
-        generateLikesAndDislikes(boss, controller.popularity.getPopularityLevel(faction));
+        generateLikesAndDislikes(boss);
         return boss;
     }
 
-    private void generateLikesAndDislikes(Customer customer, int popularityLevel) {
+    private void generateLikesAndDislikes(Customer customer) {
         //TODO: Give likes and dislikes based on accumulated gold and not popularity.
         ArrayList<ItemType> items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
         //TODO: Allow this int itemNumber = popularityLevel;

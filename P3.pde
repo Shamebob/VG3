@@ -13,6 +13,7 @@ PImage KNIGHT_IDLE, KNIGHT_CREST, KNIGHT_BOSS_IDLE;
 PImage WIZARD_IDLE, WIZARD_CREST, WIZARD_BOSS_IDLE;
 PImage ELF_IDLE, ELF_CREST, ELF_BOSS_IDLE;
 PImage ZOMBIE_IDLE, ZOMBIE_CREST, ZOMBIE_BOSS_IDLE;
+PImage KING_IDLE;
 PImage KEG, BEER, CHICKEN, CHICKEN_LEG, CHALICE, CHALICE_TABLE, CHEESE, CHEESE_BARREL;
 //SoundFile music;
 
@@ -77,7 +78,7 @@ void setup() {
   ZOMBIE_BOSS_IDLE = loadImage("zombie_boss_idle.png");
   ZOMBIE_CREST = loadImage("zombie_crest.png");
 
-
+  KING_IDLE = loadImage("king.png");
 
   controller = new Controller();
   controller.start();

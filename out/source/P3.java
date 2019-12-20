@@ -6,7 +6,6 @@ import processing.opengl.*;
 import java.util.Iterator; 
 import java.awt.geom.Rectangle2D; 
 import java.awt.Shape; 
-import processing.sound.*; 
 import java.awt.Shape; 
 import java.awt.geom.Area; 
 import java.awt.geom.Rectangle2D; 
@@ -29,7 +28,7 @@ public class P3 extends PApplet {
 
 
 
-
+//import processing.sound.*;
 
 // Keep controller as global to control the gamestate.
 Controller controller;
@@ -41,8 +40,9 @@ PImage KNIGHT_IDLE, KNIGHT_CREST, KNIGHT_BOSS_IDLE;
 PImage WIZARD_IDLE, WIZARD_CREST, WIZARD_BOSS_IDLE;
 PImage ELF_IDLE, ELF_CREST, ELF_BOSS_IDLE;
 PImage ZOMBIE_IDLE, ZOMBIE_CREST, ZOMBIE_BOSS_IDLE;
+PImage KING_IDLE;
 PImage KEG, BEER, CHICKEN, CHICKEN_LEG, CHALICE, CHALICE_TABLE, CHEESE, CHEESE_BARREL;
-// SoundFile music;
+//SoundFile music;
 
 /**
 * Setup the game
@@ -50,7 +50,7 @@ PImage KEG, BEER, CHICKEN, CHICKEN_LEG, CHALICE, CHALICE_TABLE, CHEESE, CHEESE_B
 public void setup() {
   
   noCursor();
-  frameRate(60);
+  frameRate(30);
   // music = new SoundFile(this, "inn_music.mp3");
   // TODO: Re-enable this.
   // music.loop();
@@ -105,7 +105,7 @@ public void setup() {
   ZOMBIE_BOSS_IDLE = loadImage("zombie_boss_idle.png");
   ZOMBIE_CREST = loadImage("zombie_crest.png");
 
-
+  KING_IDLE = loadImage("king.png");
 
   controller = new Controller();
   controller.start();
@@ -122,7 +122,7 @@ public void draw() {
 * Register key pressed for moving and firing.
 */
 public void keyPressed() {
-    float moveSize = 10;
+    float moveSize = 5;
 
     switch(key) {
         case 'w':
@@ -173,6 +173,8 @@ public class Animator {
     float actionBarStartX, actionBarHeight, infoStartX, infoWidth, customerEmotionsWidth, customerEmotionsStartX;
     ItemType[] newCustomerLikes, newCustomerDislikes;
     PImage[] crests = new PImage[]{KNIGHT_CREST, WIZARD_CREST, ELF_CREST, ZOMBIE_CREST};
+    PVector serverImagePos;
+    float serverWidth, serverHeight;
 
     public Animator() {
         this.actionBarStartX = displayWidth/4;
@@ -228,6 +230,10 @@ public class Animator {
 
         for(EnvironmentItem item : controller.items) {
             item.draw();
+        }
+
+        for(Worker worker: controller.workers) {
+            worker.draw();
         }
 
         controller.inn.drawWalls();
@@ -296,6 +302,8 @@ public class Animator {
         for(EnvironmentItem item : controller.build.purchaseItems) {
             item.draw();
         }
+
+        image(SERVER_DOWN_IDLE, this.serverImagePos.x, this.serverImagePos.y, 30, 40);
     }
 
     public void setupBuildItems() {
@@ -306,6 +314,10 @@ public class Animator {
             item.setPos(currentPos.copy());
             currentPos = currentPos.add(factorChange);
         }
+
+        this.serverImagePos = currentPos.copy();
+        this.serverWidth = actionBoxWidth/2;
+        this.serverHeight = this.actionBarHeight/2;
     }
 
     private void drawInventoryItems(float actionBoxWidth) {
@@ -383,6 +395,16 @@ public class Animator {
         if(itemImage != null)
             image(itemImage, x, y, width, height);
     }
+
+    public void drawEndScreen() {
+        background(139, 93, 46);
+        controller.inn.drawFloor();
+        controller.inn.drawWalls();
+        controller.player.draw();
+        fill(255, 255, 255);
+        textSize(32);
+        text(controller.displayMessage, (displayWidth/4), 50);
+    }
 }
 public class Beer extends EnvironmentItem {
     public Beer(float x, float y) {
@@ -455,8 +477,13 @@ public class Boss extends Customer {
         for(Customer customer : entourage) {
             customer.entourageLeave(this.faction, averageSatisfaction);
         }
+        
+        if(averageSatisfaction <= 50) {
+            controller.endGame(-1);
+        }
 
         controller.popularity.addPopularity(this.faction, averageSatisfaction/this.popularity);
+        controller.popularity.bossSatisfied(true, this.faction);
         super.leave();
     }
 
@@ -531,6 +558,11 @@ public class Build {
                 item = new CheeseBarrel(x,y);
                 cost = 70;
                 break;
+            case 5:
+                if(controller.gold.buyItem(500)) {
+                    controller.workers.add(controller.spawner.spawnWorker(ItemType.BEER, x, y));
+                }
+
         }
 
         if(controller.gold.buyItem(cost)) {
@@ -726,6 +758,8 @@ public class CollisionDetector {
 */
 public class Controller {
     boolean gameInPlay, endDay, buildMode;
+    String displayMessage;
+    int winCondition = 0;
     Player player;
     Time time;
     Inn inn;
@@ -735,6 +769,7 @@ public class Controller {
     ArrayList<Feeling> feelings = new ArrayList<Feeling>();
     ArrayList<Worker> workers = new ArrayList<Worker>();
     Boss nextBoss;
+    King king;
     CollisionDetector collisionDetector = new CollisionDetector();
     Cleaner cleaner = new Cleaner();
     Spawner spawner = new Spawner();
@@ -755,16 +790,22 @@ public class Controller {
         this.gold.addGold(100);
         this.calculateCustomers();
         this.spawner.setDoorPos(this.inn.getDoorPos());
-        // this.customers.add(new)
         this.gameInPlay = true;
         this.player = spawner.spawnPlayer();
-        this.spawnBoss(Faction.ZOMBIE);
-        this.workers.add(spawner.spawnWorker(ItemType.BEER));
-        // this.workers.add(spawner.spawnWorker(ItemType.CHICKENLEG));
+        this.popularity.satisfiedBoss = new boolean[]{true, true, true, true};
+        this.dayEnd();
     }
 
     public void addInnGold(int amount) {
         this.gold.addGold(amount);
+    }
+
+    public void dayEnd() {
+        this.endDay = true;
+        this.buildMode = true;
+        if(this.popularity.kingReady()) {
+            this.spawnKing();
+        }
     }
 
     public void startDay() {
@@ -787,6 +828,14 @@ public class Controller {
 
                 this.nextBoss = null;
 
+            } else if(this.king != null) {
+                this.customers.add(this.king);
+
+                for(Customer customer: this.king.entourage) {
+                    this.customers.add(customer);
+                }
+
+                this.king = null;
             } else {
                 this.customers.add(spawner.spawnCustomer());
             }
@@ -831,6 +880,10 @@ public class Controller {
         this.nextBoss = spawner.spawnBoss(faction);
     }
 
+    public void spawnKing() {
+        this.king = spawner.spawnKing();
+    }
+
     public void movePlayer(float x, float y, Facing direction) {
         PVector change = new PVector(x,y);
         if(buildMode) {
@@ -850,17 +903,28 @@ public class Controller {
         return true;
     }
 
+    public void endGame(int win) {
+        this.winCondition = win;
+        this.endDay = false;
+        this.gameInPlay = false;
+        if(win == -1) {
+            this.displayMessage = "You did not satisfy his majesty. Game over.";
+        } else {
+            this.displayMessage = "Huzzah! You have gained the glory of the crown,\nand are to become the royal innkeep";
+        }
+        
+        this.displayMessage += "\nTotal Gold Made: " + this.gold.accumulated;
+    }
+
     public void drawGame() {
-        if(this.endDay) {
-            animator.endDay(this);
+        if(this.winCondition != 0) {
+            this.animator.drawEndScreen();
+        } else if(this.endDay) {
+            this.animator.endDay(this);
         } else if(this.gameInPlay) {
-            animator.drawActiveGame(this);
+            this.animator.drawActiveGame(this);
             this.cleaner.cleanGame();
             this.collisionDetector.checkCollisions();
-        } else {
-            fill(0,255,0);
-            textSize(50);
-            text("Game Over", displayWidth/2 - 100, displayHeight/2 - 25);
         }
     }
 
@@ -1316,7 +1380,7 @@ public class Inn {
                 this.walls.add(new Wall(curX, startY, wallWidth, wallHeight, WallType.BOTTOM));
             }
             
-            if(i % 5 == 1) {
+            if(i % 4 == 1) {
                 this.walls.add(new Wall(curX, endY, wallWidth, wallHeight, WallType.WINDOW));
             } else {
                 this.walls.add(new Wall(curX, endY, wallWidth, wallHeight, WallType.TOP));
@@ -1325,10 +1389,9 @@ public class Inn {
         }
 
         wallCount = PApplet.parseInt((this.startY - this.endY)/wallHeight) + 1;
-        println("Wall count: " + wallCount);
         for(int i = 0; i < wallCount; i++) {
-            this.walls.add(new Wall(this.startX, curY, wallWidth/4, wallHeight, WallType.SIDE));
-            this.walls.add(new Wall(curX, curY, wallWidth/4, wallHeight, WallType.SIDE));
+            this.walls.add(new Wall(this.startX, curY, wallWidth/3, wallHeight, WallType.SIDE));
+            this.walls.add(new Wall(curX, curY, wallWidth/3, wallHeight, WallType.SIDE));
             curY += wallHeight;
         }
         System.out.println("Number of walls: " + this.walls.size());
@@ -1346,7 +1409,7 @@ public class Inn {
         for(int i = 0; i < heightCount; i++) {
             curX = 0;
             for(int j = 0; j < widthCount; j++) {
-                if (!((curX > this.startX && curX < this.endX - floorWidth) && (curY <= this.startY) && (curY >= this.endY))) {
+                if (!((curX > this.startX && curX < this.endX - floorWidth) && (curY <= this.startY - (floorHeight/2) && (curY >= this.endY)))) {
                     this.floor.add(new Floor(curX, curY, floorWidth, floorHeight, FloorType.GRASS));
                 }
                 curX += floorWidth;
@@ -1444,6 +1507,56 @@ public class Keg extends EnvironmentItem {
     public void draw() {
         image(KEG, this.getX(), this.getY(), 30, 30);
     }
+}
+public class King extends Customer {
+    ArrayList<Customer> entourage = new ArrayList<Customer>();
+    PImage characterImage;
+    float height, width;
+
+    public King(float x, float y, int popularity, int goldAmount, ArrayList<Customer> entourage) {
+        super(x, y, ((Shape) new Rectangle2D.Float(x, y, 40, 50)), popularity, goldAmount);
+        this.width = 40;
+        this.height = 50;
+        this.satisfaction = -50;
+        this.entourage = entourage;
+        this.characterImage = KING_IDLE;
+    }
+
+    public void draw() {
+        super.draw();
+        this.setShape(new Rectangle2D.Float(this.getX(), this.getY(), this.width, this.height));
+        image(this.characterImage, this.getX(), this.getY(), this.width, this.height);
+    }
+
+    @Override
+    protected float evaluatePerformance() {
+        float entourageSatisfaction = this.satisfaction;
+        for(Customer customer : entourage) {
+            entourageSatisfaction += customer.getSatisfaction();
+        }
+
+        entourageSatisfaction = entourageSatisfaction/(this.entourage.size() + 1);
+        if(entourageSatisfaction >= 75) {
+            controller.endGame(1);
+        } else {
+            controller.endGame(-1);
+        }
+
+        return entourageSatisfaction;
+    }
+
+    @Override
+    protected void leave() {
+        this.evaluatePerformance();
+        // for(Customer customer : entourage) {
+        //     customer.entourageLeave(this.faction, averageSatisfaction);
+        // }
+
+        // controller.popularity.addPopularity(this.faction, averageSatisfaction/this.popularity);
+        super.leave();
+    }
+
+
 }
 public class Knight extends Customer {
     public Knight(float x, float y, int popularity, int goldAmount) {
@@ -1629,13 +1742,13 @@ public class Spawner {
         int popularity = round(random(30, 80));
         Customer customer;
         customer = new Knight(this.doorPos.x + 10, displayHeight - (displayHeight/10), popularity, goldAmount);
-        generateLikesAndDislikes(customer, controller.popularity.getKnightPopularityLevel());
+        generateLikesAndDislikes(customer);
         return customer;
     }
 
-    public Worker spawnWorker(ItemType item) {
+    public Worker spawnWorker(ItemType item, float x, float y) {
         //TODO: Have them walk in the door
-        return new Worker(displayWidth/2 - 100, displayHeight/2 - 100, item);
+        return new Worker(x, y, item);
     }
 
     public Customer spawnEntourage(Faction faction, float x, float y) {
@@ -1661,8 +1774,22 @@ public class Spawner {
                 break;
         }
 
-        generateLikesAndDislikes(customer, controller.popularity.getPopularityLevel(faction));
+        generateLikesAndDislikes(customer);
         return customer;
+    }
+
+    public King spawnKing() {
+        ArrayList<Customer> entourage = new ArrayList<Customer>();
+        Faction[] factions = Faction.values();
+        int counter = 0;
+        for(PVector location : this.locations) {
+            entourage.add(spawnEntourage(factions[counter], location.x, location.y));
+            counter += 1;
+        }
+
+        King king = new King(this.doorPos.x + 10, displayHeight - (displayHeight/10), 1000, 1000, entourage);
+        generateLikesAndDislikes(king);
+        return king;
     }
 
     public Boss spawnBoss(Faction faction) {
@@ -1673,11 +1800,11 @@ public class Spawner {
         }
 
         Boss boss = new Boss(this.doorPos.x + 10, displayHeight - (displayHeight/10), 500, 500, faction, entourage);
-        generateLikesAndDislikes(boss, controller.popularity.getPopularityLevel(faction));
+        generateLikesAndDislikes(boss);
         return boss;
     }
 
-    private void generateLikesAndDislikes(Customer customer, int popularityLevel) {
+    private void generateLikesAndDislikes(Customer customer) {
         //TODO: Give likes and dislikes based on accumulated gold and not popularity.
         ArrayList<ItemType> items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
         //TODO: Allow this int itemNumber = popularityLevel;
@@ -1824,8 +1951,7 @@ public class Time {
 
         if(this.hour == 0) {
             this.dayOver = true;
-            controller.endDay = true;
-            controller.buildMode = true;
+            controller.dayEnd();
         }
     }
 
@@ -1965,13 +2091,40 @@ public class Worker extends Staff {
             if(!(item instanceof Chicken))
                 continue;
                 
-            if(this.nearbyResource == null && (item instanceof Chicken))
+            if(this.nearbyResource == null)
                 this.nearbyResource = item;
             
             if(this.isCloser(item.getPos()))
                 this.nearbyResource = item;
         }
+    }
 
+    private void findCheese() {
+        System.out.println("Finding cheese");
+        for(EnvironmentItem item : controller.items) {
+            if(!(item instanceof CheeseBarrel))
+                continue;
+                
+            if(this.nearbyResource == null)
+                this.nearbyResource = item;
+            
+            if(this.isCloser(item.getPos()))
+                this.nearbyResource = item;
+        }
+    }
+
+    private void findChalice() {
+        System.out.println("Finding cheese");
+        for(EnvironmentItem item : controller.items) {
+            if(!(item instanceof ChaliceTable))
+                continue;
+                
+            if(this.nearbyResource == null)
+                this.nearbyResource = item;
+            
+            if(this.isCloser(item.getPos()))
+                this.nearbyResource = item;
+        }
     }
 
     private void findResource() {
@@ -1982,6 +2135,14 @@ public class Worker extends Staff {
                 
             case CHICKENLEG:
                 this.findChicken();
+                break;
+
+            case CHALICE:
+                this.findChalice();
+                break;
+            
+            case CHEESE:
+                this.findCheese();
                 break;
         }
     }

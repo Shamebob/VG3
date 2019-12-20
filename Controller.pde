@@ -4,6 +4,8 @@
 */
 public class Controller {
     boolean gameInPlay, endDay, buildMode;
+    String displayMessage;
+    int winCondition = 0;
     Player player;
     Time time;
     Inn inn;
@@ -13,6 +15,7 @@ public class Controller {
     ArrayList<Feeling> feelings = new ArrayList<Feeling>();
     ArrayList<Worker> workers = new ArrayList<Worker>();
     Boss nextBoss;
+    King king;
     CollisionDetector collisionDetector = new CollisionDetector();
     Cleaner cleaner = new Cleaner();
     Spawner spawner = new Spawner();
@@ -41,6 +44,14 @@ public class Controller {
         this.gold.addGold(amount);
     }
 
+    public void dayEnd() {
+        this.endDay = true;
+        this.buildMode = true;
+        if(this.popularity.kingReady()) {
+            this.spawnKing();
+        }
+    }
+
     public void startDay() {
         if(this.endDay) {
             this.time.newDay();
@@ -61,6 +72,14 @@ public class Controller {
 
                 this.nextBoss = null;
 
+            } else if(this.king != null) {
+                this.customers.add(this.king);
+
+                for(Customer customer: this.king.entourage) {
+                    this.customers.add(customer);
+                }
+
+                this.king = null;
             } else {
                 this.customers.add(spawner.spawnCustomer());
             }
@@ -105,6 +124,10 @@ public class Controller {
         this.nextBoss = spawner.spawnBoss(faction);
     }
 
+    public void spawnKing() {
+        this.king = spawner.spawnKing();
+    }
+
     public void movePlayer(float x, float y, Facing direction) {
         PVector change = new PVector(x,y);
         if(buildMode) {
@@ -124,17 +147,28 @@ public class Controller {
         return true;
     }
 
+    public void endGame(int win) {
+        this.winCondition = win;
+        this.endDay = false;
+        this.gameInPlay = false;
+        if(win == -1) {
+            this.displayMessage = "You did not satisfy his majesty. Game over.";
+        } else {
+            this.displayMessage = "Huzzah! You have gained the glory of the crown,\nand are to become the royal innkeep";
+        }
+        
+        this.displayMessage += "\nTotal Gold Made: " + this.gold.accumulated;
+    }
+
     public void drawGame() {
-        if(this.endDay) {
-            animator.endDay(this);
+        if(this.winCondition != 0) {
+            this.animator.drawEndScreen();
+        } else if(this.endDay) {
+            this.animator.endDay(this);
         } else if(this.gameInPlay) {
-            animator.drawActiveGame(this);
+            this.animator.drawActiveGame(this);
             this.cleaner.cleanGame();
             this.collisionDetector.checkCollisions();
-        } else {
-            fill(0,255,0);
-            textSize(50);
-            text("Game Over", displayWidth/2 - 100, displayHeight/2 - 25);
         }
     }
 

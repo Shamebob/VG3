@@ -2,6 +2,8 @@ public class Animator {
     float actionBarStartX, actionBarHeight, infoStartX, infoWidth, customerEmotionsWidth, customerEmotionsStartX;
     ItemType[] newCustomerLikes, newCustomerDislikes;
     PImage[] crests = new PImage[]{KNIGHT_CREST, WIZARD_CREST, ELF_CREST, ZOMBIE_CREST};
+    PVector serverImagePos;
+    float serverWidth, serverHeight;
 
     public Animator() {
         this.actionBarStartX = displayWidth/4;
@@ -57,6 +59,10 @@ public class Animator {
 
         for(EnvironmentItem item : controller.items) {
             item.draw();
+        }
+
+        for(Worker worker: controller.workers) {
+            worker.draw();
         }
 
         controller.inn.drawWalls();
@@ -125,6 +131,8 @@ public class Animator {
         for(EnvironmentItem item : controller.build.purchaseItems) {
             item.draw();
         }
+
+        image(SERVER_DOWN_IDLE, this.serverImagePos.x, this.serverImagePos.y, 30, 40);
     }
 
     public void setupBuildItems() {
@@ -135,6 +143,10 @@ public class Animator {
             item.setPos(currentPos.copy());
             currentPos = currentPos.add(factorChange);
         }
+
+        this.serverImagePos = currentPos.copy();
+        this.serverWidth = actionBoxWidth/2;
+        this.serverHeight = this.actionBarHeight/2;
     }
 
     private void drawInventoryItems(float actionBoxWidth) {
@@ -211,5 +223,15 @@ public class Animator {
 
         if(itemImage != null)
             image(itemImage, x, y, width, height);
+    }
+
+    public void drawEndScreen() {
+        background(139, 93, 46);
+        controller.inn.drawFloor();
+        controller.inn.drawWalls();
+        controller.player.draw();
+        fill(255, 255, 255);
+        textSize(32);
+        text(controller.displayMessage, (displayWidth/4), 50);
     }
 }

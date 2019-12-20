@@ -67,6 +67,11 @@ public class Build {
                 item = new CheeseBarrel(x,y);
                 cost = 70;
                 break;
+            case 5:
+                if(controller.gold.buyItem(500)) {
+                    controller.workers.add(controller.spawner.spawnWorker(ItemType.BEER, x, y));
+                }
+
         }
 
         if(controller.gold.buyItem(cost)) {
