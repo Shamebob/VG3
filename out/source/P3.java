@@ -6,6 +6,7 @@ import processing.opengl.*;
 import java.util.Iterator; 
 import java.awt.geom.Rectangle2D; 
 import java.awt.Shape; 
+import processing.sound.*; 
 import java.awt.Shape; 
 import java.awt.geom.Area; 
 import java.awt.geom.Rectangle2D; 
@@ -28,21 +29,21 @@ public class P3 extends PApplet {
 
 
 
-//import processing.sound.*;
+
 
 // Keep controller as global to control the gamestate.
 Controller controller;
 PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, WINDOW, INDOOR_FLOOR, GRASS, PATH;
 PImage HERO_DOWN_IDLE, HERO_UP_IDLE, HERO_LEFT_IDLE, HERO_RIGHT_IDLE, HERO_PICKUP, HERO_USEITEM;
 PImage SERVER_DOWN_IDLE, SERVER_UP_IDLE, SERVER_LEFT_IDLE, SERVER_RIGHT_IDLE, SERVER_PICKUP, SERVER_USEITEM;
-PImage HAPPY, SAD;
+PImage HAPPY, SAD, LEAVING;
 PImage KNIGHT_IDLE, KNIGHT_CREST, KNIGHT_BOSS_IDLE;
 PImage WIZARD_IDLE, WIZARD_CREST, WIZARD_BOSS_IDLE;
 PImage ELF_IDLE, ELF_CREST, ELF_BOSS_IDLE;
 PImage ZOMBIE_IDLE, ZOMBIE_CREST, ZOMBIE_BOSS_IDLE;
 PImage KING_IDLE;
 PImage KEG, BEER, CHICKEN, CHICKEN_LEG, CHALICE, CHALICE_TABLE, CHEESE, CHEESE_BARREL;
-//SoundFile music;
+SoundFile music;
 
 /**
 * Setup the game
@@ -88,6 +89,7 @@ public void setup() {
 
   HAPPY = loadImage("happy.png");
   SAD = loadImage("sad.png");
+  LEAVING = loadImage("leave.png");
 
   KNIGHT_IDLE = loadImage("knight_idle.png");
   KNIGHT_BOSS_IDLE = loadImage("knight_boss_idle.png");
@@ -122,7 +124,7 @@ public void draw() {
 * Register key pressed for moving and firing.
 */
 public void keyPressed() {
-    float moveSize = 5;
+    float moveSize = 10;
 
     switch(key) {
         case 'w':
@@ -299,10 +301,17 @@ public class Animator {
     }
 
     private void drawBuildItems(float actionBoxWidth) {
+        int counter = 0;
+        int cost = 0;
         for(EnvironmentItem item : controller.build.purchaseItems) {
+            cost = findItemCost(counter);
+            text(cost + "g", item.getX(), item.getY() - 20);
             item.draw();
+            counter+= 1;
         }
 
+        cost = findItemCost(counter);
+        text(cost + "g", serverImagePos.x, serverImagePos.y - 20);
         image(SERVER_DOWN_IDLE, this.serverImagePos.x, this.serverImagePos.y, 30, 40);
     }
 
@@ -310,6 +319,7 @@ public class Animator {
         float actionBoxWidth = (displayWidth/2)/5;
         PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/2));
         PVector factorChange = new PVector(actionBoxWidth, 0);
+        
         for(EnvironmentItem item : controller.build.purchaseItems) {
             item.setPos(currentPos.copy());
             currentPos = currentPos.add(factorChange);
@@ -394,6 +404,27 @@ public class Animator {
 
         if(itemImage != null)
             image(itemImage, x, y, width, height);
+    }
+
+    public int findItemCost(int index) {
+        switch(index) {
+            case 0:
+                return 50;
+            
+            case 1:
+                return 25;
+            
+            case 2:
+                return 40;
+            
+            case 3:
+                return 70;
+
+            case 4:
+                return 500;
+        }
+
+        return 0;
     }
 
     public void drawEndScreen() {
@@ -788,12 +819,9 @@ public class Controller {
         this.buildMode = true;
         this.animator.setupBuildItems();
         this.gold.addGold(100);
-        this.calculateCustomers();
         this.spawner.setDoorPos(this.inn.getDoorPos());
         this.gameInPlay = true;
         this.player = spawner.spawnPlayer();
-        this.popularity.satisfiedBoss = new boolean[]{true, true, true, true};
-        this.dayEnd();
     }
 
     public void addInnGold(int amount) {
@@ -866,12 +894,11 @@ public class Controller {
     * Calculates the customers that have to attend the inn that day, based on popularity of faction.
     */
     private void calculateCustomers() {
-        if(this.popularity.getKnightPopularityLevel() == 1) {
-            this.spawner.setKnightSpawn(3);
-        } else {
-            this.spawner.setKnightSpawn(floor(this.popularity.getKnightPopularityLevel()/2));
-        }
-
+        this.spawner.setKnightSpawn(this.popularity.calculateSpawn(Faction.KNIGHT));
+        this.spawner.setWizardSpawn(this.popularity.calculateSpawn(Faction.WIZARD));
+        this.spawner.setElfSpawn(this.popularity.calculateSpawn(Faction.ELF));
+        this.spawner.setZombieSpawn(this.popularity.calculateSpawn(Faction.ZOMBIE));
+        println("Customers: "+this.spawner.getCustomersInDay());
         this.time.setSpawnTimer(960/this.spawner.getCustomersInDay());
     }
 
@@ -962,7 +989,9 @@ public class Controller {
     }
 
     public void newCustomer() {
-        this.customers.add(spawner.spawnCustomer());
+        Customer customer = spawner.spawnCustomer();
+        if(customer != null)
+            this.customers.add(customer);
     }
 }
 enum ItemType {
@@ -1076,7 +1105,6 @@ public abstract class Customer extends Character {
         this.money.buy(item);
         likedItem = this.reaction(itemType);
         this.addSatisfaction(likedItem);
-        println("Satisfaction: : "+ this.satisfaction);
         this.diminishingReturn = 120;
         this.resetWait();
 
@@ -1130,7 +1158,7 @@ public abstract class Customer extends Character {
 
     protected void leave() {
         this.leaving = true;
-        System.out.println("Leaving");
+        controller.addFeeling(new Feeling(this.getX() + 5, this.getY() - 5, Emotion.LEAVING));
         this.direction = controller.inn.getDoorPos().sub(this.getPos()).normalize().mult(4);
     }
 
@@ -1188,7 +1216,7 @@ public abstract class EnvironmentItem extends GameObject {
     }
 }
 enum Emotion {
-    HAPPY, SAD;
+    HAPPY, SAD, LEAVING;
 }
 
 public class Feeling extends Character {
@@ -1201,8 +1229,10 @@ public class Feeling extends Character {
 
         if(currentFeeling == Emotion.HAPPY) {
             this.drawing = HAPPY;
-        } else {
+        } else if (currentFeeling == Emotion.SAD) {
             this.drawing = SAD;
+        } else if(currentFeeling == Emotion.LEAVING) {
+            this.drawing = LEAVING;
         }
     }
 
@@ -1213,7 +1243,6 @@ public class Feeling extends Character {
             super.move(new PVector(0, -10));
         }
 
-        
         image(this.drawing, this.getX(), this.getY(), 15, 15);
 
         if(this.drawCounter == 30) {
@@ -1643,6 +1672,7 @@ public class Popularity {
     public void addPopularity(Faction faction, float popularity) {
         int index = this.findIndex(faction);
         this.popularity[index] += popularity;
+        System.out.println("Popularity Gain: " + popularity);
         
         if(this.popularity[index] >= (this.popularityLevels[index] * 10)) {
             this.lowerThresholds[index] = this.popularityLevels[index] * 10;
@@ -1698,6 +1728,18 @@ public class Popularity {
 
         return true;
     }
+
+    public int calculateSpawn(Faction faction) {
+        // int index = this.findIndex(faction);
+        // if()
+        // if(this.popularity.getKnightPopularityLevel() == 1) {
+        //     this.spawner.setKnightSpawn(3);
+        // } else {
+        //     this.spawner.setKnightSpawn(floor(this.popularity.getKnightPopularityLevel()/2));
+        // }
+
+        return 1;
+    }
 }
 
 
@@ -1706,7 +1748,7 @@ public class Popularity {
 */
 public class Spawner {
     PVector doorPos;
-    int knightSpawn, customersInDay;
+    int knightSpawn, elfSpawn, wizardSpawn, zombieSpawn, customersInDay;
     PVector[] locations;
     /**
     * Constructor for a spawner.
@@ -1727,6 +1769,21 @@ public class Spawner {
         this.customersInDay += count;
     }
 
+    public void setWizardSpawn(int count) {
+        this.wizardSpawn = count;
+        this.customersInDay += count;
+    }
+
+    public void setElfSpawn(int count) {
+        this.elfSpawn = count;
+        this.customersInDay += count;
+    }
+
+    public void setZombieSpawn(int count) {
+        this.zombieSpawn = count;
+        this.customersInDay += count;
+    }
+
     public int getCustomersInDay() {
         return this.customersInDay;
     }
@@ -1740,10 +1797,51 @@ public class Spawner {
     public Customer spawnCustomer() {
         int goldAmount = round(random(30, 80));
         int popularity = round(random(30, 80));
-        Customer customer;
-        customer = new Knight(this.doorPos.x + 10, displayHeight - (displayHeight/10), popularity, goldAmount);
-        generateLikesAndDislikes(customer);
-        return customer;
+        float x = this.doorPos.x + 10;
+        float y = displayHeight - (displayHeight/10);
+        boolean didSpawn = false;
+        Customer customer = null;
+        if(this.customersInDay > 0) {
+            while(customer == null) {
+                int val = floor(random(0, 3.5f));
+                switch(val) {
+                    case 0:
+                        if(this.knightSpawn > 0) {
+                            customer = new Knight(x, y, popularity, goldAmount);
+                            this.knightSpawn -= 1;
+                        }
+                        break;
+
+                    case 1:
+                        if(this.wizardSpawn > 0) {
+                            customer = new Wizard(x, y, popularity, goldAmount);
+                            this.wizardSpawn -= 1;
+                        }
+                        break;
+
+                    case 2:
+                        if(this.elfSpawn > 0) {
+                            customer = new Elf(x, y, popularity, goldAmount);
+                            this.elfSpawn -= 1;
+                        }
+                        break;
+
+                    case 3:
+                        if(this.zombieSpawn > 0) {
+                            customer = new Zombie(x, y, popularity, goldAmount);
+                            this.zombieSpawn -= 1;
+                        }
+                        break;
+                }
+
+            }
+
+            this.customersInDay -= 1;
+            generateLikesAndDislikes(customer);
+            return customer;
+        } else {
+            return null;
+        }
     }
 
     public Worker spawnWorker(ItemType item, float x, float y) {
@@ -1806,8 +1904,15 @@ public class Spawner {
 
     private void generateLikesAndDislikes(Customer customer) {
         //TODO: Give likes and dislikes based on accumulated gold and not popularity.
-        ArrayList<ItemType> items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
-        //TODO: Allow this int itemNumber = popularityLevel;
+        // ArrayList<ItemType> items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
+        ArrayList<ItemType> items;
+        if(controller.gold.accumulated > 750) {
+            items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
+        } else {
+            items = new ArrayList<ItemType>();
+            items.add(ItemType.BEER);
+            items.add(ItemType.CHICKENLEG);
+        }
         int itemNumber = floor(items.size()/2);
 
         ItemType[] likedItems = new ItemType[itemNumber];

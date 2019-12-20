@@ -1,5 +1,5 @@
 enum Emotion {
-    HAPPY, SAD;
+    HAPPY, SAD, LEAVING;
 }
 
 public class Feeling extends Character {
@@ -12,8 +12,10 @@ public class Feeling extends Character {
 
         if(currentFeeling == Emotion.HAPPY) {
             this.drawing = HAPPY;
-        } else {
+        } else if (currentFeeling == Emotion.SAD) {
             this.drawing = SAD;
+        } else if(currentFeeling == Emotion.LEAVING) {
+            this.drawing = LEAVING;
         }
     }
 
@@ -24,7 +26,6 @@ public class Feeling extends Character {
             super.move(new PVector(0, -10));
         }
 
-        
         image(this.drawing, this.getX(), this.getY(), 15, 15);
 
         if(this.drawCounter == 30) {

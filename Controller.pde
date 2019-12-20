@@ -34,7 +34,6 @@ public class Controller {
         this.buildMode = true;
         this.animator.setupBuildItems();
         this.gold.addGold(100);
-        this.calculateCustomers();
         this.spawner.setDoorPos(this.inn.getDoorPos());
         this.gameInPlay = true;
         this.player = spawner.spawnPlayer();
@@ -110,12 +109,11 @@ public class Controller {
     * Calculates the customers that have to attend the inn that day, based on popularity of faction.
     */
     private void calculateCustomers() {
-        if(this.popularity.getKnightPopularityLevel() == 1) {
-            this.spawner.setKnightSpawn(3);
-        } else {
-            this.spawner.setKnightSpawn(floor(this.popularity.getKnightPopularityLevel()/2));
-        }
-
+        this.spawner.setKnightSpawn(this.popularity.calculateSpawn(Faction.KNIGHT));
+        this.spawner.setWizardSpawn(this.popularity.calculateSpawn(Faction.WIZARD));
+        this.spawner.setElfSpawn(this.popularity.calculateSpawn(Faction.ELF));
+        this.spawner.setZombieSpawn(this.popularity.calculateSpawn(Faction.ZOMBIE));
+        println("Customers: "+this.spawner.getCustomersInDay());
         this.time.setSpawnTimer(960/this.spawner.getCustomersInDay());
     }
 
@@ -206,6 +204,8 @@ public class Controller {
     }
 
     public void newCustomer() {
-        this.customers.add(spawner.spawnCustomer());
+        Customer customer = spawner.spawnCustomer();
+        if(customer != null)
+            this.customers.add(customer);
     }
 }

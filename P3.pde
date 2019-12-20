@@ -1,21 +1,21 @@
 import java.util.Iterator;
 import java.awt.geom.Rectangle2D;
 import java.awt.Shape;
-//import processing.sound.*;
+import processing.sound.*;
 
 // Keep controller as global to control the gamestate.
 Controller controller;
 PImage OUTSIDE_WALL, INSIDE_WALL, DOOR, WINDOW, INDOOR_FLOOR, GRASS, PATH;
 PImage HERO_DOWN_IDLE, HERO_UP_IDLE, HERO_LEFT_IDLE, HERO_RIGHT_IDLE, HERO_PICKUP, HERO_USEITEM;
 PImage SERVER_DOWN_IDLE, SERVER_UP_IDLE, SERVER_LEFT_IDLE, SERVER_RIGHT_IDLE, SERVER_PICKUP, SERVER_USEITEM;
-PImage HAPPY, SAD;
+PImage HAPPY, SAD, LEAVING;
 PImage KNIGHT_IDLE, KNIGHT_CREST, KNIGHT_BOSS_IDLE;
 PImage WIZARD_IDLE, WIZARD_CREST, WIZARD_BOSS_IDLE;
 PImage ELF_IDLE, ELF_CREST, ELF_BOSS_IDLE;
 PImage ZOMBIE_IDLE, ZOMBIE_CREST, ZOMBIE_BOSS_IDLE;
 PImage KING_IDLE;
 PImage KEG, BEER, CHICKEN, CHICKEN_LEG, CHALICE, CHALICE_TABLE, CHEESE, CHEESE_BARREL;
-//SoundFile music;
+SoundFile music;
 
 /**
 * Setup the game
@@ -61,6 +61,7 @@ void setup() {
 
   HAPPY = loadImage("happy.png");
   SAD = loadImage("sad.png");
+  LEAVING = loadImage("leave.png");
 
   KNIGHT_IDLE = loadImage("knight_idle.png");
   KNIGHT_BOSS_IDLE = loadImage("knight_boss_idle.png");
@@ -95,7 +96,7 @@ void draw() {
 * Register key pressed for moving and firing.
 */
 void keyPressed() {
-    float moveSize = 5;
+    float moveSize = 10;
 
     switch(key) {
         case 'w':

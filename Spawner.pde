@@ -5,7 +5,7 @@ import java.util.Arrays;
 */
 public class Spawner {
     PVector doorPos;
-    int knightSpawn, customersInDay;
+    int knightSpawn, elfSpawn, wizardSpawn, zombieSpawn, customersInDay;
     PVector[] locations;
     /**
     * Constructor for a spawner.
@@ -26,6 +26,21 @@ public class Spawner {
         this.customersInDay += count;
     }
 
+    public void setWizardSpawn(int count) {
+        this.wizardSpawn = count;
+        this.customersInDay += count;
+    }
+
+    public void setElfSpawn(int count) {
+        this.elfSpawn = count;
+        this.customersInDay += count;
+    }
+
+    public void setZombieSpawn(int count) {
+        this.zombieSpawn = count;
+        this.customersInDay += count;
+    }
+
     public int getCustomersInDay() {
         return this.customersInDay;
     }
@@ -39,10 +54,51 @@ public class Spawner {
     public Customer spawnCustomer() {
         int goldAmount = round(random(30, 80));
         int popularity = round(random(30, 80));
-        Customer customer;
-        customer = new Knight(this.doorPos.x + 10, displayHeight - (displayHeight/10), popularity, goldAmount);
-        generateLikesAndDislikes(customer);
-        return customer;
+        float x = this.doorPos.x + 10;
+        float y = displayHeight - (displayHeight/10);
+        boolean didSpawn = false;
+        Customer customer = null;
+        if(this.customersInDay > 0) {
+            while(customer == null) {
+                int val = floor(random(0, 3.5));
+                switch(val) {
+                    case 0:
+                        if(this.knightSpawn > 0) {
+                            customer = new Knight(x, y, popularity, goldAmount);
+                            this.knightSpawn -= 1;
+                        }
+                        break;
+
+                    case 1:
+                        if(this.wizardSpawn > 0) {
+                            customer = new Wizard(x, y, popularity, goldAmount);
+                            this.wizardSpawn -= 1;
+                        }
+                        break;
+
+                    case 2:
+                        if(this.elfSpawn > 0) {
+                            customer = new Elf(x, y, popularity, goldAmount);
+                            this.elfSpawn -= 1;
+                        }
+                        break;
+
+                    case 3:
+                        if(this.zombieSpawn > 0) {
+                            customer = new Zombie(x, y, popularity, goldAmount);
+                            this.zombieSpawn -= 1;
+                        }
+                        break;
+                }
+
+            }
+
+            this.customersInDay -= 1;
+            generateLikesAndDislikes(customer);
+            return customer;
+        } else {
+            return null;
+        }
     }
 
     public Worker spawnWorker(ItemType item, float x, float y) {
@@ -105,8 +161,15 @@ public class Spawner {
 
     private void generateLikesAndDislikes(Customer customer) {
         //TODO: Give likes and dislikes based on accumulated gold and not popularity.
-        ArrayList<ItemType> items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
-        //TODO: Allow this int itemNumber = popularityLevel;
+        // ArrayList<ItemType> items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
+        ArrayList<ItemType> items;
+        if(controller.gold.accumulated > 750) {
+            items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
+        } else {
+            items = new ArrayList<ItemType>();
+            items.add(ItemType.BEER);
+            items.add(ItemType.CHICKENLEG);
+        }
         int itemNumber = floor(items.size()/2);
 
         ItemType[] likedItems = new ItemType[itemNumber];

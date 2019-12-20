@@ -128,10 +128,17 @@ public class Animator {
     }
 
     private void drawBuildItems(float actionBoxWidth) {
+        int counter = 0;
+        int cost = 0;
         for(EnvironmentItem item : controller.build.purchaseItems) {
+            cost = findItemCost(counter);
+            text(cost + "g", item.getX(), item.getY() - 20);
             item.draw();
+            counter+= 1;
         }
 
+        cost = findItemCost(counter);
+        text(cost + "g", serverImagePos.x, serverImagePos.y - 20);
         image(SERVER_DOWN_IDLE, this.serverImagePos.x, this.serverImagePos.y, 30, 40);
     }
 
@@ -139,6 +146,7 @@ public class Animator {
         float actionBoxWidth = (displayWidth/2)/5;
         PVector currentPos = new PVector(this.actionBarStartX + (actionBoxWidth/2), displayHeight - (actionBarHeight/2));
         PVector factorChange = new PVector(actionBoxWidth, 0);
+        
         for(EnvironmentItem item : controller.build.purchaseItems) {
             item.setPos(currentPos.copy());
             currentPos = currentPos.add(factorChange);
@@ -223,6 +231,27 @@ public class Animator {
 
         if(itemImage != null)
             image(itemImage, x, y, width, height);
+    }
+
+    public int findItemCost(int index) {
+        switch(index) {
+            case 0:
+                return 50;
+            
+            case 1:
+                return 25;
+            
+            case 2:
+                return 40;
+            
+            case 3:
+                return 70;
+
+            case 4:
+                return 500;
+        }
+
+        return 0;
     }
 
     public void drawEndScreen() {

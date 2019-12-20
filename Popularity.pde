@@ -16,6 +16,7 @@ public class Popularity {
     public void addPopularity(Faction faction, float popularity) {
         int index = this.findIndex(faction);
         this.popularity[index] += popularity;
+        System.out.println("Popularity Gain: " + popularity);
         
         if(this.popularity[index] >= (this.popularityLevels[index] * 10)) {
             this.lowerThresholds[index] = this.popularityLevels[index] * 10;
@@ -70,5 +71,17 @@ public class Popularity {
         }
 
         return true;
+    }
+
+    public int calculateSpawn(Faction faction) {
+        // int index = this.findIndex(faction);
+        // if()
+        // if(this.popularity.getKnightPopularityLevel() == 1) {
+        //     this.spawner.setKnightSpawn(3);
+        // } else {
+        //     this.spawner.setKnightSpawn(floor(this.popularity.getKnightPopularityLevel()/2));
+        // }
+
+        return 1;
     }
 }

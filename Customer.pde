@@ -109,7 +109,6 @@ public abstract class Customer extends Character {
         this.money.buy(item);
         likedItem = this.reaction(itemType);
         this.addSatisfaction(likedItem);
-        println("Satisfaction: : "+ this.satisfaction);
         this.diminishingReturn = 120;
         this.resetWait();
 
@@ -163,7 +162,7 @@ public abstract class Customer extends Character {
 
     protected void leave() {
         this.leaving = true;
-        System.out.println("Leaving");
+        controller.addFeeling(new Feeling(this.getX() + 5, this.getY() - 5, Emotion.LEAVING));
         this.direction = controller.inn.getDoorPos().sub(this.getPos()).normalize().mult(4);
     }
 
