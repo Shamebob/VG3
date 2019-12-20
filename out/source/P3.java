@@ -52,9 +52,9 @@ public void setup() {
   
   noCursor();
   frameRate(30);
-  // music = new SoundFile(this, "inn_music.mp3");
+   music = new SoundFile(this, "inn_music.mp3");
   // TODO: Re-enable this.
-  // music.loop();
+   music.loop();
 
   OUTSIDE_WALL = loadImage("outside_wall.png");
   INSIDE_WALL = loadImage("inside_wall.png");
@@ -525,7 +525,7 @@ public class Build {
     PVector buildSquarePos;
     Shape shape;
     float buildSquareWidth, buildSquareHeight;
-    boolean unlocked = true;
+    boolean unlocked = false;
 
     public Build() {
         this.buildSquarePos = new PVector(displayWidth/2, displayHeight/2);
@@ -591,7 +591,7 @@ public class Build {
                 cost = 70;
                 break;
             case 5:
-                if(controller.gold.amount >= 0)
+                if(controller.gold.amount >= 00)
                     controller.chooseWorkerServe(x, y);
                 break;
         }
@@ -826,7 +826,7 @@ public class Controller {
         this.inn = new Inn();
         this.buildMode = true;
         this.animator.setupBuildItems();
-        this.gold.addGold(100);
+        this.gold.addGold(500);
         this.spawner.setDoorPos(this.inn.getDoorPos());
         this.gameInPlay = true;
         this.player = spawner.spawnPlayer();
@@ -887,7 +887,7 @@ public class Controller {
     }
 
     public void workerServer(ItemType item) {
-        if(this.gold.buyItem(0) && this.build.unlocked) {
+        if(this.gold.buyItem(500) && this.build.unlocked) {
             this.workers.add(this.spawner.spawnWorker(item, this.workerSpawn.x, this.workerSpawn.y));
         }
     }
@@ -1211,7 +1211,8 @@ public abstract class Customer extends Character {
     }
 
     protected float evaluatePerformance() {
-        return this.satisfaction/this.popularity;
+        System.out.println("Performance: "+(this.satisfaction + this.popularity)/100);
+        return (this.satisfaction + this.popularity)/100;
     }
 
     public float getSatisfaction() {

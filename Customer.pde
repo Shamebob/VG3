@@ -165,7 +165,8 @@ public abstract class Customer extends Character {
     }
 
     protected float evaluatePerformance() {
-        return this.satisfaction/this.popularity;
+        System.out.println("Performance: "+(this.satisfaction + this.popularity)/100);
+        return (this.satisfaction + this.popularity)/100;
     }
 
     public float getSatisfaction() {

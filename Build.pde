@@ -69,7 +69,7 @@ public class Build {
                 cost = 70;
                 break;
             case 5:
-                if(controller.gold.amount >= 500)
+                if(controller.gold.amount >= 00)
                     controller.chooseWorkerServe(x, y);
                 break;
         }

@@ -95,7 +95,7 @@ public class Controller {
     }
 
     public void workerServer(ItemType item) {
-        if(this.gold.buyItem(0) && this.build.unlocked) {
+        if(this.gold.buyItem(500) && this.build.unlocked) {
             this.workers.add(this.spawner.spawnWorker(item, this.workerSpawn.x, this.workerSpawn.y));
         }
     }
