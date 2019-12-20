@@ -137,14 +137,15 @@ public class Worker extends Staff {
                 }
             }
 
-            if(!likesItem || customer.entering || customer.leaving || customer.getDiminishingReturns() >= 30)
+            if(!likesItem || customer.entering || customer.leaving || customer.getDiminishingReturns() >= 10) {
                 continue;
-
-            if(this.target == null)
-                this.target = customer;
-            
-            if(this.isCloser(customer.getPos()))
-                this.target = customer;
+            } else {
+                if(this.target == null) {
+                    this.target = customer;
+                } else if(this.isCloser(customer.getPos())) {
+                    this.target = customer;
+                }
+            }
         }
     }
 
@@ -241,9 +242,6 @@ public class Worker extends Staff {
                 this.direction = new PVector(0, -moveSize);
             }
         }
-    }
-
-    public void fillInventory() {
     }
 
     @Override

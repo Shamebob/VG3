@@ -525,6 +525,7 @@ public class Build {
     PVector buildSquarePos;
     Shape shape;
     float buildSquareWidth, buildSquareHeight;
+    boolean unlocked = true;
 
     public Build() {
         this.buildSquarePos = new PVector(displayWidth/2, displayHeight/2);
@@ -590,17 +591,23 @@ public class Build {
                 cost = 70;
                 break;
             case 5:
-                if(controller.gold.buyItem(500)) {
-                    controller.workers.add(controller.spawner.spawnWorker(ItemType.BEER, x, y));
-                }
-
+                if(controller.gold.amount >= 0)
+                    controller.chooseWorkerServe(x, y);
+                break;
         }
+
+        if(this.unlocked == false && ((item instanceof ChaliceTable) || (item instanceof CheeseBarrel)))
+            return null;
 
         if(controller.gold.buyItem(cost)) {
             return item;
         } else {
             return null;
         }
+    }
+
+    public void unlockItems() {
+        this.unlocked = true;
     }
 
 }
@@ -617,7 +624,7 @@ public class Chalice extends EnvironmentItem {
 public class ChaliceTable extends EnvironmentItem {
 
     public ChaliceTable(float x, float y) {
-        super(x, y, ((Shape) new Ellipse2D.Float(x, y, 15, 15)), 30);
+        super(x, y, ((Shape) new Ellipse2D.Float(x, y, 15, 15)), 20);
     }
 
     public void draw() {
@@ -680,7 +687,7 @@ public class Cheese extends EnvironmentItem {
 public class CheeseBarrel extends EnvironmentItem {
 
     public CheeseBarrel(float x, float y) {
-        super(x, y, ((Shape) new Ellipse2D.Float(x, y, 15, 15)), 30);
+        super(x, y, ((Shape) new Ellipse2D.Float(x, y, 15, 15)), 20);
     }
 
     public void draw() {
@@ -788,7 +795,8 @@ public class CollisionDetector {
 /* for resolving and updating the game state, drawing the game as well as monitoring if the game is over.
 */
 public class Controller {
-    boolean gameInPlay, endDay, buildMode;
+    boolean gameInPlay, endDay, buildMode, chooseWorkerServe;
+    PVector workerSpawn;
     String displayMessage;
     int winCondition = 0;
     Player player;
@@ -873,6 +881,16 @@ public class Controller {
         }
     }
 
+    public void chooseWorkerServe(float x, float y) {
+        this.workerSpawn = new PVector(x, y);
+        this.chooseWorkerServe = true;
+    }
+
+    public void workerServer(ItemType item) {
+        if(this.gold.buyItem(0) && this.build.unlocked) {
+            this.workers.add(this.spawner.spawnWorker(item, this.workerSpawn.x, this.workerSpawn.y));
+        }
+    }
     public boolean checkPlacementLocation(Shape shape) {
         for(EnvironmentItem item : this.items) {
             if(collisionDetector.checkCollision(item.getShape(), shape))
@@ -914,7 +932,9 @@ public class Controller {
     public void movePlayer(float x, float y, Facing direction) {
         PVector change = new PVector(x,y);
         if(buildMode) {
-            build.moveBuildSquare(direction);
+            if(!this.chooseWorkerServe) {
+                build.moveBuildSquare(direction);
+            }
         } else {
             if(checkMove(this.player.getPos(), change)) {
                 this.player.move(change);
@@ -976,9 +996,39 @@ public class Controller {
 
     public void itemKeyPress(int itemKey) {
         if(buildMode) {
-            EnvironmentItem item = build.placeItem(itemKey);
-            if(item!= null)
+            if(this.chooseWorkerServe) {
+                boolean selected = false;
+                System.out.println("Switching");
+                switch (itemKey) {
+                    case 1 :
+                        this.workerServer(ItemType.BEER);
+                        selected = true;
+                    break;
+
+                    case 2 :
+                        this.workerServer(ItemType.CHICKENLEG);
+                        selected = true;
+                    break;	
+                    
+                    case 3 :
+                        this.workerServer(ItemType.CHALICE);
+                        selected = true;
+                    break;	
+
+                    case 4:
+                        this.workerServer(ItemType.CHEESE);
+                        selected = true;
+                    break;
+                }
+
+                if(selected)
+                    this.chooseWorkerServe = false;
+            } else {
+                EnvironmentItem item = build.placeItem(itemKey);
+                if(item!= null)
                 this.items.add(item);
+            }
+            
         } else {
             player.useItem(itemKey);
         }
@@ -1090,8 +1140,6 @@ public abstract class Customer extends Character {
         if(this.leaving)
             return;
 
-        
-        
         if(item instanceof Beer) {
             itemType = ItemType.BEER;
         } else if(item instanceof ChickenLeg) {
@@ -1347,6 +1395,9 @@ public class Gold {
     public void addGold(int quantity) {
         this.amount += quantity;
         this.accumulated += quantity;
+        if(this.accumulated >= 500) {
+            controller.build.unlockItems();
+        }
     }
 
     public int getAmount() {
@@ -1367,10 +1418,15 @@ public class Gold {
 
     public void buy(EnvironmentItem item) {
         int val = 0;
+
         if(item instanceof Beer) {
             val = 10;
         } else if(item instanceof ChickenLeg) {
             val = 5;
+        } else if(item instanceof Chalice) {
+            val = 8;
+        } else if(item instanceof Cheese) {
+            val = 7;
         }
 
         this.amount -= val;
@@ -1530,7 +1586,7 @@ public class Inn {
 public class Keg extends EnvironmentItem {
 
     public Keg(float x, float y) {
-        super(x, y, ((Shape) new Ellipse2D.Float(x, y, 15, 15)), 30);
+        super(x, y, ((Shape) new Ellipse2D.Float(x, y, 15, 15)), 20);
     }
 
     public void draw() {
@@ -1843,7 +1899,6 @@ public class Spawner {
     }
 
     public Worker spawnWorker(ItemType item, float x, float y) {
-        //TODO: Have them walk in the door
         return new Worker(x, y, item);
     }
 
@@ -1901,10 +1956,8 @@ public class Spawner {
     }
 
     private void generateLikesAndDislikes(Customer customer) {
-        //TODO: Give likes and dislikes based on accumulated gold and not popularity.
-        // ArrayList<ItemType> items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
         ArrayList<ItemType> items;
-        if(controller.gold.accumulated > 750) {
+        if(controller.gold.accumulated >= 500) {
             items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
         } else {
             items = new ArrayList<ItemType>();
@@ -2260,14 +2313,15 @@ public class Worker extends Staff {
                 }
             }
 
-            if(!likesItem || customer.entering || customer.leaving || customer.getDiminishingReturns() >= 30)
+            if(!likesItem || customer.entering || customer.leaving || customer.getDiminishingReturns() >= 10) {
                 continue;
-
-            if(this.target == null)
-                this.target = customer;
-            
-            if(this.isCloser(customer.getPos()))
-                this.target = customer;
+            } else {
+                if(this.target == null) {
+                    this.target = customer;
+                } else if(this.isCloser(customer.getPos())) {
+                    this.target = customer;
+                }
+            }
         }
     }
 
@@ -2364,9 +2418,6 @@ public class Worker extends Staff {
                 this.direction = new PVector(0, -moveSize);
             }
         }
-    }
-
-    public void fillInventory() {
     }
 
     @Override

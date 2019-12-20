@@ -10,6 +10,9 @@ public class Gold {
     public void addGold(int quantity) {
         this.amount += quantity;
         this.accumulated += quantity;
+        if(this.accumulated >= 500) {
+            controller.build.unlockItems();
+        }
     }
 
     public int getAmount() {
@@ -30,7 +33,7 @@ public class Gold {
 
     public void buy(EnvironmentItem item) {
         int val = 0;
-        
+
         if(item instanceof Beer) {
             val = 10;
         } else if(item instanceof ChickenLeg) {

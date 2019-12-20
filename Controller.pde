@@ -3,7 +3,8 @@
 /* for resolving and updating the game state, drawing the game as well as monitoring if the game is over.
 */
 public class Controller {
-    boolean gameInPlay, endDay, buildMode;
+    boolean gameInPlay, endDay, buildMode, chooseWorkerServe;
+    PVector workerSpawn;
     String displayMessage;
     int winCondition = 0;
     Player player;
@@ -88,6 +89,16 @@ public class Controller {
         }
     }
 
+    public void chooseWorkerServe(float x, float y) {
+        this.workerSpawn = new PVector(x, y);
+        this.chooseWorkerServe = true;
+    }
+
+    public void workerServer(ItemType item) {
+        if(this.gold.buyItem(0) && this.build.unlocked) {
+            this.workers.add(this.spawner.spawnWorker(item, this.workerSpawn.x, this.workerSpawn.y));
+        }
+    }
     public boolean checkPlacementLocation(Shape shape) {
         for(EnvironmentItem item : this.items) {
             if(collisionDetector.checkCollision(item.getShape(), shape))
@@ -129,7 +140,9 @@ public class Controller {
     public void movePlayer(float x, float y, Facing direction) {
         PVector change = new PVector(x,y);
         if(buildMode) {
-            build.moveBuildSquare(direction);
+            if(!this.chooseWorkerServe) {
+                build.moveBuildSquare(direction);
+            }
         } else {
             if(checkMove(this.player.getPos(), change)) {
                 this.player.move(change);
@@ -191,9 +204,39 @@ public class Controller {
 
     public void itemKeyPress(int itemKey) {
         if(buildMode) {
-            EnvironmentItem item = build.placeItem(itemKey);
-            if(item!= null)
+            if(this.chooseWorkerServe) {
+                boolean selected = false;
+                System.out.println("Switching");
+                switch (itemKey) {
+                    case 1 :
+                        this.workerServer(ItemType.BEER);
+                        selected = true;
+                    break;
+
+                    case 2 :
+                        this.workerServer(ItemType.CHICKENLEG);
+                        selected = true;
+                    break;	
+                    
+                    case 3 :
+                        this.workerServer(ItemType.CHALICE);
+                        selected = true;
+                    break;	
+
+                    case 4:
+                        this.workerServer(ItemType.CHEESE);
+                        selected = true;
+                    break;
+                }
+
+                if(selected)
+                    this.chooseWorkerServe = false;
+            } else {
+                EnvironmentItem item = build.placeItem(itemKey);
+                if(item!= null)
                 this.items.add(item);
+            }
+            
         } else {
             player.useItem(itemKey);
         }

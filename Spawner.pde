@@ -102,7 +102,6 @@ public class Spawner {
     }
 
     public Worker spawnWorker(ItemType item, float x, float y) {
-        //TODO: Have them walk in the door
         return new Worker(x, y, item);
     }
 
@@ -160,10 +159,8 @@ public class Spawner {
     }
 
     private void generateLikesAndDislikes(Customer customer) {
-        //TODO: Give likes and dislikes based on accumulated gold and not popularity.
-        // ArrayList<ItemType> items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
         ArrayList<ItemType> items;
-        if(controller.gold.accumulated > 750) {
+        if(controller.gold.accumulated >= 500) {
             items = new ArrayList<ItemType>(Arrays.asList(ItemType.values()));
         } else {
             items = new ArrayList<ItemType>();

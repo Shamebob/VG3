@@ -3,6 +3,7 @@ public class Build {
     PVector buildSquarePos;
     Shape shape;
     float buildSquareWidth, buildSquareHeight;
+    boolean unlocked = false;
 
     public Build() {
         this.buildSquarePos = new PVector(displayWidth/2, displayHeight/2);
@@ -68,17 +69,23 @@ public class Build {
                 cost = 70;
                 break;
             case 5:
-                if(controller.gold.buyItem(500)) {
-                    controller.workers.add(controller.spawner.spawnWorker(ItemType.BEER, x, y));
-                }
-
+                if(controller.gold.amount >= 500)
+                    controller.chooseWorkerServe(x, y);
+                break;
         }
+
+        if(this.unlocked == false && ((item instanceof ChaliceTable) || (item instanceof CheeseBarrel)))
+            return null;
 
         if(controller.gold.buyItem(cost)) {
             return item;
         } else {
             return null;
         }
+    }
+
+    public void unlockItems() {
+        this.unlocked = true;
     }
 
 }
